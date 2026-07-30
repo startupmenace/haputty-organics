@@ -1,0 +1,8 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/happrwbr/public_html
+    - /bin/cp -R . $DEPLOYPATH
+    - /bin/rm -rf $DEPLOYPATH/.git
+    - /bin/rm -f $DEPLOYPATH/.gitignore
+    - /bin/rm -f $DEPLOYPATH/.cpanel.yml
