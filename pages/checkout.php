@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../config/mpesa.php';
 // Handle buy_now redirect
 if (isset($_GET['buy_now'])) {
     $buyId = (int)$_GET['buy_now'];
