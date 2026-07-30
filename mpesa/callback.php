@@ -49,35 +49,42 @@ foreach ($items as $item) {
 $mpesaReceipt = $meta['MpesaReceiptNumber'] ?? $meta['ReceiptNumber'] ?? '';
 $mpesaPhone = $meta['PhoneNumber'] ?? '';
 
+// Respond to M-Pesa immediately — before any email logic
+http_response_code(200);
+echo json_encode(['ResultCode' => 0, 'ResultDesc' => 'Success']);
+
+if (ob_get_level()) ob_flush();
+flush();
+
 if ($resultCode === 0) {
     $pdo->prepare("UPDATE orders SET status = 'confirmed', mpesa_receipt = ?, mpesa_phone = ?, mpesa_result = ? WHERE id = ?")
         ->execute([$mpesaReceipt, $mpesaPhone, $resultDesc, $order['id']]);
-
-    // Send payment confirmation
-    if ($order['customer_email']) {
-        $stmtItems = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?");
-        $stmtItems->execute([$order['id']]);
-        $items = $stmtItems->fetchAll();
-        $order['status'] = 'confirmed';
-        sendEmail($order['customer_email'], 'Payment Received — ' . $order['order_ref'],
-            orderEmailBody($order, $items, "Your M-Pesa payment of Ksh " . number_format($order['total']) . " has been received!\n\nReceipt: " . $mpesaReceipt . "\n\nWe'll start processing your order right away."));
-    }
-    sendEmail(ADMIN_EMAIL, 'Payment Confirmed — ' . $order['order_ref'],
-        "Payment confirmed for order " . $order['order_ref'] . "\nM-Pesa Receipt: " . $mpesaReceipt . "\nAmount: Ksh " . number_format($order['total']));
 
     @file_put_contents(__DIR__ . '/logs.txt', '[' . date('Y-m-d H:i:s') . "] SUCCESS: Order {$order['order_ref']} receipt=$mpesaReceipt" . PHP_EOL, FILE_APPEND);
 } else {
     $pdo->prepare("UPDATE orders SET status = 'cancelled', mpesa_result = ? WHERE id = ?")
         ->execute([$resultDesc, $order['id']]);
 
-    // Notify on failure
-    if ($order['customer_email']) {
-        sendEmail($order['customer_email'], 'Payment Failed — ' . $order['order_ref'],
-            "Your M-Pesa payment for order " . $order['order_ref'] . " was not completed.\n\nReason: " . $resultDesc . "\n\nYou can try again from your order page.");
-    }
-
     @file_put_contents(__DIR__ . '/logs.txt', '[' . date('Y-m-d H:i:s') . "] FAILED: Order {$order['order_ref']} code=$resultCode desc=$resultDesc" . PHP_EOL, FILE_APPEND);
 }
 
-http_response_code(200);
-echo json_encode(['ResultCode' => 0, 'ResultDesc' => 'Success']);
+// Send emails after response (best-effort, errors won't affect callback)
+try {
+    if ($resultCode === 0) {
+        if ($order['customer_email']) {
+            $stmtItems = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?");
+            $stmtItems->execute([$order['id']]);
+            $items = $stmtItems->fetchAll();
+            $order['status'] = 'confirmed';
+            sendEmail($order['customer_email'], 'Payment Received — ' . $order['order_ref'],
+                orderEmailBody($order, $items, "Your M-Pesa payment of Ksh " . number_format($order['total']) . " has been received!\n\nReceipt: " . $mpesaReceipt . "\n\nWe'll start processing your order right away."));
+        }
+        sendEmail(ADMIN_EMAIL, 'Payment Confirmed — ' . $order['order_ref'],
+            "Payment confirmed for order " . $order['order_ref'] . "\nM-Pesa Receipt: " . $mpesaReceipt . "\nAmount: Ksh " . number_format($order['total']));
+    } elseif ($order['customer_email']) {
+        sendEmail($order['customer_email'], 'Payment Failed — ' . $order['order_ref'],
+            "Your M-Pesa payment for order " . $order['order_ref'] . " was not completed.\n\nReason: " . $resultDesc . "\n\nYou can try again from your order page.");
+    }
+} catch (Exception $e) {
+    @file_put_contents(__DIR__ . '/logs.txt', '[' . date('Y-m-d H:i:s') . "] EMAIL ERROR: " . $e->getMessage() . PHP_EOL, FILE_APPEND);
+}
