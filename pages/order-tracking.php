@@ -49,7 +49,7 @@ $currentStep = $order ? array_search($order['status'], $statusSteps) : -1;
     </div>
 
     <form method="POST" class="flex gap-3">
-        <input type="text" name="order_ref" placeholder="Enter order reference (e.g. HAPUTTY-XXXXX)" value="<?= escape($orderRef) ?>" class="flex-1 bg-white border border-neutral-300 px-3 py-2.5 text-xs focus:border-black focus:outline-none" />
+        <input type="text" name="order_ref" placeholder="Enter order reference (e.g. HAPPUTY-XXXXX)" value="<?= escape($orderRef) ?>" class="flex-1 bg-white border border-neutral-300 px-3 py-2.5 text-xs focus:border-black focus:outline-none" />
         <button type="submit" name="track_order" class="bg-black text-white text-xs font-bold uppercase px-6 py-2.5 hover:bg-neutral-800 cursor-pointer">Track</button>
     </form>
 

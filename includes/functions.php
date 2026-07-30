@@ -64,7 +64,7 @@ function requireAdmin() {
 }
 
 function generateOrderRef() {
-    return 'HAPUTTY-' . strtoupper(substr(uniqid(), -6)) . rand(100, 999);
+    return 'HAPPUTY-' . strtoupper(substr(uniqid(), -6)) . rand(100, 999);
 }
 
 function formatPrice($amount) {

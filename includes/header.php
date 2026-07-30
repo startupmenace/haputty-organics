@@ -10,7 +10,7 @@ $catSlug = $_GET['category'] ?? 'all-products';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAPUTTY ORGANICS &#8212; Premium Teeth Whitening &amp; Oral Care</title>
+    <title>HAPPUTY ORGANICS &#8212; Premium Teeth Whitening &amp; Oral Care</title>
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -37,7 +37,7 @@ $catSlug = $_GET['category'] ?? 'all-products';
         <div class="flex items-center justify-between h-20 md:h-24 gap-4">
 
             <a href="/" class="cursor-pointer flex items-center group no-underline shrink-0">
-                <span class="text-2xl md:text-3xl font-black tracking-tighter uppercase font-mono text-black">HAPUTTY ORGANICS</span>
+                <span class="text-2xl md:text-3xl font-black tracking-tighter uppercase font-mono text-black">HAPPUTY ORGANICS</span>
             </a>
 
             <nav class="hidden lg:flex items-center gap-8 text-xs font-bold tracking-wider uppercase">

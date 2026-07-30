@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="bg-white border border-neutral-200 p-8 space-y-6">
         <div class="text-center space-y-2">
             <h1 class="text-xl font-black uppercase tracking-widest">Create Account</h1>
-            <p class="text-xs text-neutral-500">Join HAPUTTY ORGANICS today</p>
+            <p class="text-xs text-neutral-500">Join HAPPUTY ORGANICS today</p>
         </div>
 
         <?php if ($error): ?>

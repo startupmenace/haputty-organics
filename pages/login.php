@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="bg-white border border-neutral-200 p-8 space-y-6">
         <div class="text-center space-y-2">
             <h1 class="text-xl font-black uppercase tracking-widest">Sign In</h1>
-            <p class="text-xs text-neutral-500">Welcome back to HAPUTTY ORGANICS</p>
+            <p class="text-xs text-neutral-500">Welcome back to HAPPUTY ORGANICS</p>
         </div>
 
         <?php if ($error): ?>

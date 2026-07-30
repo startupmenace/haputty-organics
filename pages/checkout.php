@@ -451,7 +451,7 @@ $counties = [
 <?php else: ?>
     <div class="space-y-6 bg-[#f9f9f9] -mx-3 sm:-mx-6 lg:-mx-8 p-4 sm:p-8">
         <div class="max-w-6xl mx-auto flex items-center justify-between border-b border-neutral-200 pb-4 bg-white p-4">
-            <span class="text-xl font-black uppercase font-mono tracking-tighter">HAPUTTY ORGANICS</span>
+            <span class="text-xl font-black uppercase font-mono tracking-tighter">HAPPUTY ORGANICS</span>
             <a href="/" class="text-xs font-bold bg-black text-white px-4 py-2 hover:bg-neutral-800 flex items-center gap-1.5 no-underline">
                 Edit Cart
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>

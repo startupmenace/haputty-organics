@@ -13,7 +13,7 @@ define('MPESA_QUERY_URL', 'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1
 define('MPESA_CALLBACK_URL', 'https://' . ($_SERVER['HTTP_HOST'] ?? 'haputty.co.ke') . '/mpesa/callback.php');
 
 define('ADMIN_EMAIL', 'orders@happutysorganics.com');
-define('SITE_NAME', 'HAPUTTY ORGANICS');
+define('SITE_NAME', 'HAPPUTY ORGANICS');
 
 function mpesaAuth() {
     $ch = curl_init(MPESA_AUTH_URL);
@@ -54,7 +54,7 @@ function mpesaStkPush($phone, $amount, $orderRef, $accountRef = null) {
         'PhoneNumber' => $phone,
         'CallBackURL' => MPESA_CALLBACK_URL,
         'AccountReference' => $accountRef ?: $orderRef,
-        'TransactionDesc' => 'HAPUTTY ORGANICS Order ' . $orderRef,
+        'TransactionDesc' => 'HAPPUTY ORGANICS Order ' . $orderRef,
     ];
 
     $ch = curl_init(MPESA_STK_URL);

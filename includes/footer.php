@@ -2,7 +2,7 @@
 
 <footer class="bg-black text-white border-t border-neutral-800 mt-16 text-xs">
     <div class="max-w-7xl mx-auto px-4 py-8 text-center text-neutral-400 text-[11px] font-mono">
-        &copy; 2026 HAPUTTY ORGANICS. All Rights Reserved.
+        &copy; 2026 HAPPUTY ORGANICS. All Rights Reserved.
     </div>
 </footer>
 

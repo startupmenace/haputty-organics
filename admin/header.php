@@ -14,7 +14,7 @@ $pendingOrders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pendin
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAPUTTY ORGANICS Admin Panel</title>
+    <title>HAPPUTY ORGANICS Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * { box-sizing: border-box; }
@@ -27,7 +27,7 @@ $pendingOrders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pendin
     <!-- Sidebar -->
     <aside class="w-56 bg-black text-white flex flex-col flex-shrink-0">
         <div class="p-4 border-b border-neutral-800">
-            <a href="/admin/" class="text-lg font-black uppercase font-mono tracking-tighter no-underline text-white">HAPUTTY ORGANICS</a>
+            <a href="/admin/" class="text-lg font-black uppercase font-mono tracking-tighter no-underline text-white">HAPPUTY ORGANICS</a>
             <div class="text-[10px] text-neutral-500 mt-1">Admin Panel</div>
         </div>
         <nav class="flex-1 p-3 space-y-1 text-xs">
