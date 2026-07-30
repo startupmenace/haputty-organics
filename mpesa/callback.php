@@ -1,45 +1,60 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../config/mpesa.php';
 
-// M-Pesa sends JSON in the request body
+// Ensure columns exist
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_checkout_id VARCHAR(100) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_merchant_id VARCHAR(100) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_receipt VARCHAR(100) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_phone VARCHAR(50) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_result TEXT DEFAULT NULL"); } catch (Exception $e) {}
+
 $raw = file_get_contents('php://input');
 $data = json_decode($raw, true);
 
-// Log callback for debugging
-$log = date('Y-m-d H:i:s') . ' | ' . $raw . PHP_EOL;
-@file_put_contents(__DIR__ . '/callback.log', $log, FILE_APPEND);
+// Log raw callback
+$log = '[' . date('Y-m-d H:i:s') . '] RAW: ' . $raw . PHP_EOL;
+@file_put_contents(__DIR__ . '/logs.txt', $log, FILE_APPEND);
 
-$checkoutRequestId = $data['Body']['stkCallback']['CheckoutRequestID'] ?? '';
-$resultCode = $data['Body']['stkCallback']['ResultCode'] ?? 1;
-$resultDesc = $data['Body']['stkCallback']['ResultDesc'] ?? '';
-$amount = $data['Body']['stkCallback']['CallbackMetadata']['Item'][0]['Value'] ?? 0;
-$mpesaReceipt = $data['Body']['stkCallback']['CallbackMetadata']['Item'][1]['Value'] ?? '';
-$phone = $data['Body']['stkCallback']['CallbackMetadata']['Item'][4]['Value'] ?? '';
-
-if (!$checkoutRequestId) {
+$callback = $data['Body']['stkCallback'] ?? null;
+if (!$callback) {
+    @file_put_contents(__DIR__ . '/logs.txt', '[' . date('Y-m-d H:i:s') . '] ERROR: No stkCallback body' . PHP_EOL, FILE_APPEND);
     http_response_code(400);
     exit;
 }
 
-// Find order by checkout request ID
+$checkoutRequestId = $callback['CheckoutRequestID'] ?? '';
+$resultCode = $callback['ResultCode'] ?? 1;
+$resultDesc = $callback['ResultDesc'] ?? '';
+
+// Find order
 $stmt = $pdo->prepare("SELECT * FROM orders WHERE mpesa_checkout_id = ?");
 $stmt->execute([$checkoutRequestId]);
 $order = $stmt->fetch();
 
 if (!$order) {
+    @file_put_contents(__DIR__ . '/logs.txt', '[' . date('Y-m-d H:i:s') . "] ERROR: No order for checkout_id=$checkoutRequestId" . PHP_EOL, FILE_APPEND);
     http_response_code(404);
     exit;
 }
 
+// Parse metadata items by Name
+$items = $callback['CallbackMetadata']['Item'] ?? [];
+$meta = [];
+foreach ($items as $item) {
+    $meta[$item['Name']] = $item['Value'] ?? '';
+}
+
+$mpesaReceipt = $meta['MpesaReceiptNumber'] ?? $meta['ReceiptNumber'] ?? '';
+$mpesaPhone = $meta['PhoneNumber'] ?? '';
+
 if ($resultCode === 0) {
-    // Payment successful
     $pdo->prepare("UPDATE orders SET status = 'confirmed', mpesa_receipt = ?, mpesa_phone = ?, mpesa_result = ? WHERE id = ?")
-        ->execute([$mpesaReceipt, $phone, $resultDesc, $order['id']]);
+        ->execute([$mpesaReceipt, $mpesaPhone, $resultDesc, $order['id']]);
+    @file_put_contents(__DIR__ . '/logs.txt', '[' . date('Y-m-d H:i:s') . "] SUCCESS: Order {$order['order_ref']} receipt=$mpesaReceipt" . PHP_EOL, FILE_APPEND);
 } else {
-    // Payment failed
-    $pdo->prepare("UPDATE orders SET mpesa_result = ? WHERE id = ?")
+    $pdo->prepare("UPDATE orders SET status = 'cancelled', mpesa_result = ? WHERE id = ?")
         ->execute([$resultDesc, $order['id']]);
+    @file_put_contents(__DIR__ . '/logs.txt', '[' . date('Y-m-d H:i:s') . "] FAILED: Order {$order['order_ref']} code=$resultCode desc=$resultDesc" . PHP_EOL, FILE_APPEND);
 }
 
 http_response_code(200);
