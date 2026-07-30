@@ -193,6 +193,8 @@ try {
          1)
     ");
     echo "[OK] Products seeded.\n";
+    $pdo->exec("UPDATE products SET colors = '[]'");
+    echo "[OK] Product colors cleared.\n";
 
     // Create admin user (password: admin123)
     $hash = password_hash('admin123', PASSWORD_DEFAULT);
