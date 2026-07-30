@@ -77,7 +77,8 @@ try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_receipt VARCHAR(100) DEFAU
 try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_phone VARCHAR(50) DEFAULT NULL"); } catch (Exception $e) {}
 try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_result TEXT DEFAULT NULL"); } catch (Exception $e) {}
 try { $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_fee DECIMAL(10,2) DEFAULT 0.00"); } catch (Exception $e) {}
-try { $pdo->exec("CREATE TABLE IF NOT EXISTS delivery_fees (id INT AUTO_INCREMENT PRIMARY KEY, region VARCHAR(255) NOT NULL, fee DECIMAL(10,2) NOT NULL DEFAULT 0.00, is_active TINYINT(1) DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"); } catch (Exception $e) {}
+try { $pdo->exec("CREATE TABLE IF NOT EXISTS delivery_fees (id INT AUTO_INCREMENT PRIMARY KEY, region VARCHAR(255) NOT NULL, fee DECIMAL(10,2) NOT NULL DEFAULT 0.00, is_active TINYINT(1) DEFAULT 1, parent_id INT DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE delivery_fees ADD COLUMN parent_id INT DEFAULT NULL"); } catch (Exception $e) {}
 
 $orderPlaced = false;
 $pendingOrderId = 0;
@@ -107,9 +108,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         // Look up delivery fee
         $deliveryFee = 0.00;
         if ($deliveryMethod === 'delivery' && $deliveryLocation) {
-            $stmtFee = $pdo->prepare("SELECT fee FROM delivery_fees WHERE is_active = 1 AND LOCATE(region, ?) > 0 LIMIT 1");
-            $stmtFee->execute([$deliveryLocation]);
-            $deliveryFee = (float)($stmtFee->fetchColumn() ?: 0);
+            // Parse "County - Town" format
+            $parts = explode(' - ', $deliveryLocation, 2);
+            $parsedCounty = trim($parts[0] ?? '');
+            $parsedTown = trim($parts[1] ?? '');
+
+            // Look for town-specific fee first
+            if ($parsedTown) {
+                $stmtFee = $pdo->prepare("SELECT df.fee FROM delivery_fees df
+                    JOIN delivery_fees dc ON df.parent_id = dc.id
+                    WHERE df.is_active = 1 AND dc.region = ? AND df.region = ?");
+                $stmtFee->execute([$parsedCounty, $parsedTown]);
+                $townFee = $stmtFee->fetchColumn();
+                if ($townFee !== false && (float)$townFee > 0) {
+                    $deliveryFee = (float)$townFee;
+                }
+            }
+
+            // Fall back to county default fee
+            if ($deliveryFee <= 0 && $parsedCounty) {
+                $stmtFee = $pdo->prepare("SELECT fee FROM delivery_fees WHERE is_active = 1 AND parent_id IS NULL AND region = ? LIMIT 1");
+                $stmtFee->execute([$parsedCounty]);
+                $deliveryFee = (float)($stmtFee->fetchColumn() ?: 0);
+            }
         }
         $finalTotal = $subtotal + $deliveryFee;
 
