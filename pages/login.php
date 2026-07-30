@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unset($_SESSION['wishlist']);
             }
 
-            header('Location: /');
+            header('Location: ' . ($user['is_admin'] ? '/admin/' : '/'));
             exit;
         } else {
             $error = 'Invalid email or password.';
