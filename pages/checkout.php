@@ -76,12 +76,15 @@ try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_merchant_id VARCHAR(100) D
 try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_receipt VARCHAR(100) DEFAULT NULL"); } catch (Exception $e) {}
 try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_phone VARCHAR(50) DEFAULT NULL"); } catch (Exception $e) {}
 try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_result TEXT DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_fee DECIMAL(10,2) DEFAULT 0.00"); } catch (Exception $e) {}
+try { $pdo->exec("CREATE TABLE IF NOT EXISTS delivery_fees (id INT AUTO_INCREMENT PRIMARY KEY, region VARCHAR(255) NOT NULL, fee DECIMAL(10,2) NOT NULL DEFAULT 0.00, is_active TINYINT(1) DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"); } catch (Exception $e) {}
 
 $orderPlaced = false;
 $pendingOrderId = 0;
 $orderRef = '';
 $error = '';
 $pendingNotice = null;
+$deliveryFee = 0.00;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     $firstName = trim($_POST['first_name'] ?? '');
@@ -101,12 +104,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     } else {
         $orderRef = generateOrderRef();
 
+        // Look up delivery fee
+        $deliveryFee = 0.00;
+        if ($deliveryMethod === 'delivery' && $deliveryLocation) {
+            $stmtFee = $pdo->prepare("SELECT fee FROM delivery_fees WHERE is_active = 1 AND LOCATE(region, ?) > 0 LIMIT 1");
+            $stmtFee->execute([$deliveryLocation]);
+            $deliveryFee = (float)($stmtFee->fetchColumn() ?: 0);
+        }
+        $finalTotal = $subtotal + $deliveryFee;
+
         if (isset($_SESSION['user_id'])) {
-            $stmt = $pdo->prepare("INSERT INTO orders (user_id, order_ref, total, status, payment_method, phone, delivery_method, delivery_location, delivery_instructions) VALUES (?, ?, ?, 'pending', 'mpesa', ?, ?, ?, ?)");
-            $stmt->execute([$_SESSION['user_id'], $orderRef, $finalTotal, $phone, $deliveryMethod, $deliveryLocation, $deliveryInstructions]);
+            $stmt = $pdo->prepare("INSERT INTO orders (user_id, order_ref, total, delivery_fee, status, payment_method, phone, delivery_method, delivery_location, delivery_instructions) VALUES (?, ?, ?, ?, 'pending', 'mpesa', ?, ?, ?, ?)");
+            $stmt->execute([$_SESSION['user_id'], $orderRef, $finalTotal, $deliveryFee, $phone, $deliveryMethod, $deliveryLocation, $deliveryInstructions]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO orders (order_ref, total, status, payment_method, phone, delivery_method, delivery_location, delivery_instructions) VALUES (?, ?, 'pending', 'mpesa', ?, ?, ?, ?)");
-            $stmt->execute([$orderRef, $finalTotal, $phone, $deliveryMethod, $deliveryLocation, $deliveryInstructions]);
+            $stmt = $pdo->prepare("INSERT INTO orders (order_ref, total, delivery_fee, status, payment_method, phone, delivery_method, delivery_location, delivery_instructions) VALUES (?, ?, ?, 'pending', 'mpesa', ?, ?, ?, ?)");
+            $stmt->execute([$orderRef, $finalTotal, $deliveryFee, $phone, $deliveryMethod, $deliveryLocation, $deliveryInstructions]);
         }
 
         $orderId = $pdo->lastInsertId();
@@ -160,6 +172,7 @@ if (!$orderPlaced && isset($_GET['order'])) {
             $finalTotal = (float)$restoreOrder['total'];
             $phone = $restoreOrder['phone'];
             $deliveryLocation = $restoreOrder['delivery_location'];
+            $deliveryFee = (float)($restoreOrder['delivery_fee'] ?? 0);
             $orderPlaced = true;
         }
     }
@@ -554,10 +567,7 @@ $counties = [
 
                     <div class="border-t border-neutral-200 pt-3 space-y-1.5 text-xs font-mono">
                         <div class="flex justify-between text-neutral-600"><span>Subtotal</span><span>Ksh <?= number_format($subtotal) ?>.00</span></div>
-                        <div class="flex justify-between text-neutral-600"><span>Discount</span><span>-Ksh 0.00</span></div>
-                        <div class="flex justify-between text-neutral-600"><span>Shipping</span><span>Ksh 0.00</span></div>
-                        <div class="flex justify-between text-neutral-600"><span>Tax</span><span>Ksh 0.00</span></div>
-                        <div class="flex justify-between text-neutral-600 pt-1 border-t border-neutral-100"><span>Total before credits</span><span>Ksh <?= number_format($subtotal) ?>.00</span></div>
+                        <div class="flex justify-between text-neutral-600"><span>Delivery Fee</span><span>Ksh <?= number_format($deliveryFee) ?>.00</span></div>
                         <div class="border-t border-black pt-3 flex justify-between text-sm font-extrabold text-black font-sans">
                             <span>Total</span>
                             <span class="font-mono text-base font-bold">Ksh <?= number_format($finalTotal) ?>.00</span>

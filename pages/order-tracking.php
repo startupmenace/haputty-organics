@@ -108,6 +108,12 @@ $currentStep = $order ? array_search($order['status'], $statusSteps) : -1;
                     <span class="font-semibold text-black"><?= escape($order['delivery_location']) ?></span>
                 </div>
                 <?php endif; ?>
+                <?php if ((float)($order['delivery_fee'] ?? 0) > 0): ?>
+                <div class="flex justify-between text-neutral-500">
+                    <span>Delivery Fee</span>
+                    <span class="font-semibold text-black">Ksh <?= number_format((float)$order['delivery_fee']) ?>.00</span>
+                </div>
+                <?php endif; ?>
                 <?php if ($order['delivery_instructions']): ?>
                 <div class="flex justify-between text-neutral-500">
                     <span>Instructions</span>

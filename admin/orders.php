@@ -105,6 +105,14 @@ require_once __DIR__ . '/header.php';
                         <?php endforeach; ?>
                     </tbody>
                     <tfoot>
+                        <tr class="border-t border-neutral-200 font-bold">
+                            <td colspan="3" class="p-2 text-right text-xs">Subtotal</td>
+                            <td class="p-2 text-right font-mono">Ksh <?= number_format($viewOrder['total'] - (float)($viewOrder['delivery_fee'] ?? 0)) ?></td>
+                        </tr>
+                        <tr class="text-neutral-500 font-semibold">
+                            <td colspan="3" class="p-2 text-right text-xs">Delivery Fee</td>
+                            <td class="p-2 text-right font-mono">Ksh <?= number_format($viewOrder['delivery_fee'] ?? 0) ?></td>
+                        </tr>
                         <tr class="border-t border-black font-bold">
                             <td colspan="3" class="p-2 text-right text-xs">Total</td>
                             <td class="p-2 text-right font-mono">Ksh <?= number_format($viewOrder['total']) ?></td>
