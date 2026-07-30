@@ -12,6 +12,9 @@ define('MPESA_QUERY_URL', 'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1
 // Callback URL (force HTTPS + detect domain)
 define('MPESA_CALLBACK_URL', 'https://' . ($_SERVER['HTTP_HOST'] ?? 'haputty.co.ke') . '/mpesa/callback.php');
 
+define('ADMIN_EMAIL', 'orders@happutysorganics.com');
+define('SITE_NAME', 'HAPUTTY ORGANICS');
+
 function mpesaAuth() {
     $ch = curl_init(MPESA_AUTH_URL);
     curl_setopt_array($ch, [

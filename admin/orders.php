@@ -12,6 +12,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     $validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
     if (in_array($newStatus, $validStatuses)) {
         $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?")->execute([$newStatus, $orderId]);
+
+        // Send status update email
+        $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ?");
+        $stmt->execute([$orderId]);
+        $updatedOrder = $stmt->fetch();
+        if ($updatedOrder && $updatedOrder['customer_email']) {
+            $stmtItems = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?");
+            $stmtItems->execute([$orderId]);
+            $items = $stmtItems->fetchAll();
+            $msg = "Your order status has been updated to: " . strtoupper($newStatus) . ".\n\n";
+            if ($newStatus === 'confirmed') $msg .= "Your payment has been confirmed! We'll start processing your order shortly.";
+            elseif ($newStatus === 'processing') $msg .= "Your order is being prepared.";
+            elseif ($newStatus === 'shipped') $msg .= "Your order is on the way!";
+            elseif ($newStatus === 'delivered') $msg .= "Your order has been delivered. Enjoy!";
+            elseif ($newStatus === 'cancelled') $msg .= "Your order has been cancelled. Contact us for more info.";
+            $emailBody = orderEmailBody($updatedOrder, $items, $msg);
+            sendEmail($updatedOrder['customer_email'], 'Order ' . ucfirst($newStatus) . ' — ' . $updatedOrder['order_ref'], $emailBody);
+        }
+
         $message = 'Order status updated to ' . ucfirst($newStatus) . '.';
     }
 }
@@ -19,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
 // Get single order view
 $viewOrder = null;
 if (isset($_GET['view'])) {
-    $stmt = $pdo->prepare("SELECT o.*, CONCAT(u.first_name, ' ', u.last_name) as customer_name, u.email as customer_email FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.id = ?");
+    $stmt = $pdo->prepare("SELECT o.*, COALESCE(o.customer_name, CONCAT(u.first_name, ' ', u.last_name)) as customer_name, COALESCE(o.customer_email, u.email) as customer_email FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.id = ?");
     $stmt->execute([(int)$_GET['view']]);
     $viewOrder = $stmt->fetch();
 }

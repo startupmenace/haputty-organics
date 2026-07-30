@@ -77,6 +77,8 @@ try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_receipt VARCHAR(100) DEFAU
 try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_phone VARCHAR(50) DEFAULT NULL"); } catch (Exception $e) {}
 try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_result TEXT DEFAULT NULL"); } catch (Exception $e) {}
 try { $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_fee DECIMAL(10,2) DEFAULT 0.00"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN customer_email VARCHAR(255) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN customer_name VARCHAR(255) DEFAULT NULL"); } catch (Exception $e) {}
 try { $pdo->exec("CREATE TABLE IF NOT EXISTS delivery_fees (id INT AUTO_INCREMENT PRIMARY KEY, region VARCHAR(255) NOT NULL, fee DECIMAL(10,2) NOT NULL DEFAULT 0.00, is_active TINYINT(1) DEFAULT 1, parent_id INT DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"); } catch (Exception $e) {}
 try { $pdo->exec("ALTER TABLE delivery_fees ADD COLUMN parent_id INT DEFAULT NULL"); } catch (Exception $e) {}
 
@@ -135,11 +137,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         $finalTotal = $subtotal + $deliveryFee;
 
         if (isset($_SESSION['user_id'])) {
-            $stmt = $pdo->prepare("INSERT INTO orders (user_id, order_ref, total, delivery_fee, status, payment_method, phone, delivery_method, delivery_location, delivery_instructions) VALUES (?, ?, ?, ?, 'pending', 'mpesa', ?, ?, ?, ?)");
-            $stmt->execute([$_SESSION['user_id'], $orderRef, $finalTotal, $deliveryFee, $phone, $deliveryMethod, $deliveryLocation, $deliveryInstructions]);
+            $stmt = $pdo->prepare("INSERT INTO orders (user_id, order_ref, total, delivery_fee, status, payment_method, phone, delivery_method, delivery_location, delivery_instructions, customer_email, customer_name) VALUES (?, ?, ?, ?, 'pending', 'mpesa', ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$_SESSION['user_id'], $orderRef, $finalTotal, $deliveryFee, $phone, $deliveryMethod, $deliveryLocation, $deliveryInstructions, $email, $firstName . ' ' . $lastName]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO orders (order_ref, total, delivery_fee, status, payment_method, phone, delivery_method, delivery_location, delivery_instructions) VALUES (?, ?, ?, 'pending', 'mpesa', ?, ?, ?, ?)");
-            $stmt->execute([$orderRef, $finalTotal, $deliveryFee, $phone, $deliveryMethod, $deliveryLocation, $deliveryInstructions]);
+            $stmt = $pdo->prepare("INSERT INTO orders (order_ref, total, delivery_fee, status, payment_method, phone, delivery_method, delivery_location, delivery_instructions, customer_email, customer_name) VALUES (?, ?, ?, 'pending', 'mpesa', ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$orderRef, $finalTotal, $deliveryFee, $phone, $deliveryMethod, $deliveryLocation, $deliveryInstructions, $email, $firstName . ' ' . $lastName]);
         }
 
         $orderId = $pdo->lastInsertId();
@@ -167,6 +169,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
 
         $orderPlaced = true;
         $pendingOrderId = $orderId;
+
+        // Send confirmation emails
+        $stmtItems = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ?");
+        $stmtItems->execute([$orderId]);
+        $orderItems = $stmtItems->fetchAll();
+        $orderRow = ['order_ref' => $orderRef, 'status' => 'pending', 'total' => $finalTotal, 'delivery_fee' => $deliveryFee, 'delivery_location' => $deliveryLocation];
+        $emailBody = orderEmailBody($orderRow, $orderItems, "Thank you for your order!\n\nWe've received your order and are waiting for M-Pesa payment confirmation.\n\nOrder Summary:");
+        sendEmail($email, 'Order Confirmed — ' . $orderRef, $emailBody);
+        sendEmail(ADMIN_EMAIL, 'New Order — ' . $orderRef, orderEmailBody($orderRow, $orderItems, "A new order has been placed.\n\nCustomer: " . $firstName . ' ' . $lastName . "\nEmail: " . $email . "\nPhone: " . $phone));
 
         // Redirect to payment screen (POST-REDIRECT-GET)
         header('Location: ?page=checkout&order=' . $orderId);
