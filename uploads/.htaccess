@@ -1,0 +1,9 @@
+# Deny access to all file types by default
+<FilesMatch "\.php$">
+  Require all denied
+</FilesMatch>
+
+# Allow image files
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+  Require all granted
+</FilesMatch>
