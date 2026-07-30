@@ -51,6 +51,11 @@ CREATE TABLE orders (
   delivery_method VARCHAR(20) DEFAULT NULL,
   delivery_location VARCHAR(255) DEFAULT NULL,
   delivery_instructions TEXT,
+  mpesa_checkout_id VARCHAR(100) DEFAULT NULL,
+  mpesa_merchant_id VARCHAR(100) DEFAULT NULL,
+  mpesa_receipt VARCHAR(100) DEFAULT NULL,
+  mpesa_phone VARCHAR(50) DEFAULT NULL,
+  mpesa_result TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );

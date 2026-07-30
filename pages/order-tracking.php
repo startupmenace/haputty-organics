@@ -16,7 +16,6 @@ if ($orderRef) {
     if (!$order) {
         $trackingError = 'Order not found. Please check your order reference number.';
     } else {
-        // Verify ownership
         if (isset($_SESSION['user_id']) && $order['user_id'] && $order['user_id'] != $_SESSION['user_id']) {
             $trackingError = 'This order does not belong to your account.';
             $order = null;
@@ -26,6 +25,17 @@ if ($orderRef) {
             $items = $stmt->fetchAll();
         }
     }
+}
+
+// Return JSON for AJAX polling
+if (isset($_GET['ajax']) && $order) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => $order['status'],
+        'mpesa_result' => $order['mpesa_result'] ?? '',
+        'mpesa_receipt' => $order['mpesa_receipt'] ?? '',
+    ]);
+    exit;
 }
 
 $statusSteps = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];

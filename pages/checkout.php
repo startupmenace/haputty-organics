@@ -68,17 +68,17 @@ try {
 }
 
 // Add delivery columns to orders table if missing
-try {
-    $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_method VARCHAR(20) DEFAULT NULL");
-} catch (Exception $e) {}
-try {
-    $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_location VARCHAR(255) DEFAULT NULL");
-} catch (Exception $e) {}
-try {
-    $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_instructions TEXT DEFAULT NULL");
-} catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_method VARCHAR(20) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_location VARCHAR(255) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_instructions TEXT DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_checkout_id VARCHAR(100) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_merchant_id VARCHAR(100) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_receipt VARCHAR(100) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_phone VARCHAR(50) DEFAULT NULL"); } catch (Exception $e) {}
+try { $pdo->exec("ALTER TABLE orders ADD COLUMN mpesa_result TEXT DEFAULT NULL"); } catch (Exception $e) {}
 
 $orderPlaced = false;
+$pendingOrderId = 0;
 $orderRef = '';
 $error = '';
 
@@ -136,6 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         }
 
         $orderPlaced = true;
+        $pendingOrderId = $orderId;
     }
 }
 
@@ -192,26 +193,135 @@ $counties = [
 ?>
 
 <?php if ($orderPlaced): ?>
-    <div class="max-w-xl mx-auto py-16 text-center space-y-6 bg-white p-8 border border-neutral-200">
-        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <?php require_once __DIR__ . '/../config/mpesa.php'; ?>
+    <div class="max-w-xl mx-auto py-8 space-y-8" id="paymentScreen">
+        <div class="bg-white border border-neutral-200 p-8 text-center space-y-6">
+            <div class="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h2 class="text-xl font-bold text-black">Complete Payment</h2>
+            <p class="text-xs text-neutral-600">Pay via M-Pesa to confirm your order</p>
+
+            <div class="bg-neutral-50 p-4 text-left text-xs font-mono space-y-1 border border-neutral-200">
+                <div><span class="text-neutral-500">Order Ref:</span> <span class="font-bold text-black"><?= escape($orderRef) ?></span></div>
+                <div><span class="text-neutral-500">Amount:</span> <span class="font-bold text-black">Ksh <?= number_format($finalTotal) ?>.00</span></div>
+                <div><span class="text-neutral-500">Phone:</span> <span class="font-bold text-black">+<?= escape($phone) ?></span></div>
+                <div><span class="text-neutral-500">Delivery:</span> <span class="font-bold text-black"><?= escape($deliveryLocation ?? '') ?></span></div>
+            </div>
+
+            <div id="mpesaStatus" class="space-y-4">
+                <button id="payBtn" onclick="initiatePayment(<?= $pendingOrderId ?>)" class="w-full bg-black text-white text-xs font-bold uppercase py-4 hover:bg-neutral-800 transition-colors cursor-pointer">
+                    Pay Ksh <?= number_format($finalTotal) ?> with M-Pesa
+                </button>
+                <p class="text-[10px] text-neutral-400">You will receive an STK Push prompt on your phone. Enter your M-Pesa PIN to confirm.</p>
+            </div>
+
+            <div id="mpesaProgress" class="hidden space-y-4">
+                <div class="flex items-center justify-center gap-3">
+                    <svg class="w-6 h-6 text-black animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    <span class="text-sm font-semibold text-black">Checking your phone for M-Pesa prompt...</span>
+                </div>
+                <p class="text-xs text-neutral-500">Check your phone and enter your M-Pesa PIN to complete payment.</p>
+                <p class="text-[10px] text-neutral-400">Waiting for confirmation... <span id="pollCount">15</span>s</p>
+                <div class="bg-neutral-100 h-1 w-full"><div id="pollBar" class="bg-black h-1 transition-all" style="width: 100%"></div></div>
+            </div>
+
+            <div id="mpesaSuccess" class="hidden space-y-4">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <h3 class="font-bold text-black">Payment Successful!</h3>
+                <p class="text-xs text-neutral-600">Your order has been confirmed. You will receive delivery updates via SMS.</p>
+                <a href="/?page=order-tracking&ref=<?= urlencode($orderRef) ?>" class="block w-full bg-black text-white text-xs font-bold uppercase py-3 hover:bg-neutral-800 no-underline">Track Your Order</a>
+                <a href="/" class="block w-full bg-white border border-black text-black text-xs font-bold uppercase py-3 hover:bg-neutral-100 no-underline">Return to Store</a>
+            </div>
+
+            <div id="mpesaFailed" class="hidden space-y-4">
+                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </div>
+                <h3 class="font-bold text-black">Payment Failed</h3>
+                <p id="mpesaFailMsg" class="text-xs text-neutral-600">The transaction could not be completed.</p>
+                <button onclick="retryPayment(<?= $pendingOrderId ?>)" class="w-full bg-black text-white text-xs font-bold uppercase py-3 hover:bg-neutral-800 transition-colors cursor-pointer">Try Again</button>
+                <a href="/?page=order-tracking&ref=<?= urlencode($orderRef) ?>" class="block text-xs font-semibold text-black underline">Check Order Status</a>
+            </div>
         </div>
-        <h2 class="text-2xl font-bold text-black">Order Confirmed!</h2>
-        <p class="text-xs text-neutral-600">
-            Thank you for your order. An M-Pesa transaction receipt and delivery updates have been sent to <span class="font-bold text-black">+<?= escape($phone ?? '') ?></span>.
-        </p>
-        <div class="bg-neutral-50 p-4 text-left text-xs font-mono space-y-1 border border-neutral-200">
-            <div><span class="text-neutral-500">Order Ref:</span> <?= escape($orderRef) ?></div>
-            <div><span class="text-neutral-500">Amount:</span> Ksh <?= number_format($finalTotal) ?>.00</div>
-            <div><span class="text-neutral-500">Delivery:</span> <?= escape($deliveryLocation ?? '') ?></div>
-        </div>
-        <a href="/?page=order-tracking&ref=<?= urlencode($orderRef) ?>" class="block w-full bg-black text-white text-xs font-bold uppercase py-3 hover:bg-neutral-800 no-underline">
-            Track Your Order
-        </a>
-        <a href="/" class="block w-full bg-white border border-black text-black text-xs font-bold uppercase py-3 hover:bg-neutral-100 no-underline">
-            Return to Store
-        </a>
     </div>
+
+    <script>
+    let pollTimer = null;
+    let pollSeconds = 15;
+    let orderId = <?= $pendingOrderId ?>;
+
+    function initiatePayment(id) {
+        document.getElementById('payBtn').disabled = true;
+        document.getElementById('payBtn').textContent = 'Processing...';
+
+        const f = new FormData();
+        f.append('order_id', id);
+        f.append('phone', '<?= preg_replace('/[^0-9]/', '', $phone) ?>');
+        f.append('amount', <?= $finalTotal ?>);
+
+        fetch('/ajax/mpesa.php', { method: 'POST', body: f })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    document.getElementById('mpesaStatus').classList.add('hidden');
+                    document.getElementById('mpesaProgress').classList.remove('hidden');
+                    startPolling(id);
+                } else {
+                    document.getElementById('payBtn').disabled = false;
+                    document.getElementById('payBtn').textContent = 'Pay Ksh <?= number_format($finalTotal) ?> with M-Pesa';
+                    document.getElementById('mpesaFailMsg').textContent = d.message;
+                    document.getElementById('mpesaStatus').classList.add('hidden');
+                    document.getElementById('mpesaFailed').classList.remove('hidden');
+                }
+            });
+    }
+
+    function startPolling(id) {
+        pollSeconds = 15;
+        document.getElementById('pollCount').textContent = pollSeconds;
+        document.getElementById('pollBar').style.width = '100%';
+
+        pollTimer = setInterval(() => {
+            pollSeconds--;
+            document.getElementById('pollCount').textContent = pollSeconds;
+            document.getElementById('pollBar').style.width = (pollSeconds / 15 * 100) + '%';
+
+            if (pollSeconds <= 0) {
+                clearInterval(pollTimer);
+                checkPaymentStatus(id);
+            }
+        }, 1000);
+    }
+
+    function checkPaymentStatus(id) {
+        fetch('/?page=order-tracking&ref=<?= urlencode($orderRef) ?>&ajax=1')
+            .then(r => r.json())
+            .then(d => {
+                if (d.status === 'confirmed' || d.status === 'processing' || d.status === 'shipped' || d.status === 'delivered') {
+                    clearInterval(pollTimer);
+                    document.getElementById('mpesaProgress').classList.add('hidden');
+                    document.getElementById('mpesaSuccess').classList.remove('hidden');
+                } else if (d.status === 'cancelled') {
+                    clearInterval(pollTimer);
+                    document.getElementById('mpesaProgress').classList.add('hidden');
+                    document.getElementById('mpesaFailed').classList.remove('hidden');
+                    document.getElementById('mpesaFailMsg').textContent = d.mpesa_result || 'Payment was cancelled.';
+                } else {
+                    startPolling(id);
+                }
+            });
+    }
+
+    function retryPayment(id) {
+        document.getElementById('mpesaFailed').classList.add('hidden');
+        document.getElementById('mpesaStatus').classList.remove('hidden');
+        document.getElementById('payBtn').disabled = false;
+        document.getElementById('payBtn').textContent = 'Pay Ksh <?= number_format($finalTotal) ?> with M-Pesa';
+    }
+    </script>
 <?php else: ?>
     <div class="space-y-6 bg-[#f9f9f9] -mx-3 sm:-mx-6 lg:-mx-8 p-4 sm:p-8">
         <div class="max-w-6xl mx-auto flex items-center justify-between border-b border-neutral-200 pb-4 bg-white p-4">
