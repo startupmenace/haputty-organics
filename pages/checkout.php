@@ -52,8 +52,31 @@ foreach ($cartItems as $item) {
 
 $finalTotal = $subtotal;
 
-// Get active shop locations
-$shopLocations = $pdo->query("SELECT * FROM shop_locations WHERE is_active = 1 ORDER BY name")->fetchAll();
+// Get active shop locations (create table if missing)
+$shopLocations = [];
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS shop_locations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        address TEXT NOT NULL,
+        is_active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+    $shopLocations = $pdo->query("SELECT * FROM shop_locations WHERE is_active = 1 ORDER BY name")->fetchAll();
+} catch (Exception $e) {
+    $shopLocations = [];
+}
+
+// Add delivery columns to orders table if missing
+try {
+    $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_method VARCHAR(20) DEFAULT NULL");
+} catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_location VARCHAR(255) DEFAULT NULL");
+} catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE orders ADD COLUMN delivery_instructions TEXT DEFAULT NULL");
+} catch (Exception $e) {}
 
 $orderPlaced = false;
 $orderRef = '';
