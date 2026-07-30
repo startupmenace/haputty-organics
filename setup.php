@@ -4,21 +4,14 @@ echo "========================\n\n";
 
 // Database config
 $host = 'localhost';
-$dbname = 'toothsavior';
-$user = 'root';
-$pass = '';
+$dbname = 'happrwbr_happuty';
+$user = 'happrwbr_tooth';
+$pass = 'savior@2026';
 
 try {
-    // Connect without database
-    $pdo = new PDO("mysql:host=$host", $user, $pass);
+    // Connect directly to the database
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    // Create database
-    $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbname` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    echo "[OK] Database '$dbname' created.\n";
-
-    // Switch to database
-    $pdo->exec("USE `$dbname`");
 
     // Create tables
     $pdo->exec("
