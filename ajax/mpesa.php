@@ -10,16 +10,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+$action = $_POST['action'] ?? 'pay';
 $orderId = (int)($_POST['order_id'] ?? 0);
-$phone = trim($_POST['phone'] ?? '');
-$amount = (float)($_POST['amount'] ?? 0);
 
-if (!$orderId || !$phone || $amount <= 0) {
-    echo json_encode(['success' => false, 'message' => 'Missing order details']);
+if (!$orderId) {
+    echo json_encode(['success' => false, 'message' => 'Missing order ID']);
     exit;
 }
 
-// Verify order exists and belongs to user
 $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ?");
 $stmt->execute([$orderId]);
 $order = $stmt->fetch();
@@ -29,19 +27,52 @@ if (!$order) {
     exit;
 }
 
-// Check ownership
 if ($order['user_id'] && (!isset($_SESSION['user_id']) || $order['user_id'] != $_SESSION['user_id'])) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
 
-// Initiate STK Push
-$result = mpesaStkPush($phone, $amount, $order['order_ref']);
+if ($action === 'pay') {
+    $phone = trim($_POST['phone'] ?? '');
+    $amount = (float)($_POST['amount'] ?? 0);
 
-if ($result['success']) {
-    // Store checkout request ID for callback matching
-    $pdo->prepare("UPDATE orders SET mpesa_checkout_id = ?, mpesa_merchant_id = ? WHERE id = ?")
-        ->execute([$result['checkout_request_id'], $result['merchant_request_id'], $orderId]);
+    if (!$phone || $amount <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Missing payment details']);
+        exit;
+    }
+
+    $result = mpesaStkPush($phone, $amount, $order['order_ref']);
+
+    if ($result['success']) {
+        $pdo->prepare("UPDATE orders SET mpesa_checkout_id = ?, mpesa_merchant_id = ? WHERE id = ?")
+            ->execute([$result['checkout_request_id'], $result['merchant_request_id'], $orderId]);
+    }
+
+    echo json_encode($result);
+
+} elseif ($action === 'query') {
+    if (!$order['mpesa_checkout_id']) {
+        echo json_encode(['success' => true, 'paid' => false, 'message' => 'No pending payment']);
+        exit;
+    }
+
+    // If order is already confirmed in DB, skip query
+    if (in_array($order['status'], ['confirmed', 'processing', 'shipped', 'delivered'])) {
+        echo json_encode(['success' => true, 'paid' => true, 'message' => 'Already confirmed']);
+        exit;
+    }
+
+    // Query M-Pesa status
+    $result = mpesaQuery($order['mpesa_checkout_id']);
+
+    if ($result['success'] && $result['paid']) {
+        // Update order as confirmed
+        $pdo->prepare("UPDATE orders SET status = 'confirmed' WHERE id = ? AND status = 'pending'")
+            ->execute([$orderId]);
+    }
+
+    echo json_encode($result);
+
+} else {
+    echo json_encode(['success' => false, 'message' => 'Unknown action']);
 }
-
-echo json_encode($result);

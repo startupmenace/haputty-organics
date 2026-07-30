@@ -307,6 +307,7 @@ $counties = [
     }
 
     function checkPaymentStatus(id) {
+        // First check our DB via tracking endpoint
         fetch('/?page=order-tracking&ref=<?= urlencode($orderRef) ?>&ajax=1')
             .then(r => r.json())
             .then(d => {
@@ -314,15 +315,43 @@ $counties = [
                     clearInterval(pollTimer);
                     document.getElementById('mpesaProgress').classList.add('hidden');
                     document.getElementById('mpesaSuccess').classList.remove('hidden');
+                    return;
                 } else if (d.status === 'cancelled') {
                     clearInterval(pollTimer);
                     document.getElementById('mpesaProgress').classList.add('hidden');
                     document.getElementById('mpesaFailed').classList.remove('hidden');
                     document.getElementById('mpesaFailMsg').textContent = d.mpesa_result || 'Payment was cancelled.';
+                    return;
+                }
+                // Still pending — query M-Pesa directly
+                return queryMpesa(id);
+            })
+            .catch(() => startPolling(id));
+    }
+
+    function queryMpesa(id) {
+        const f = new FormData();
+        f.append('action', 'query');
+        f.append('order_id', id);
+        fetch('/ajax/mpesa.php', { method: 'POST', body: f })
+            .then(r => r.json())
+            .then(d => {
+                if (d.paid) {
+                    clearInterval(pollTimer);
+                    document.getElementById('mpesaProgress').classList.add('hidden');
+                    document.getElementById('mpesaSuccess').classList.remove('hidden');
+                    // Reload to refresh order status
+                    window.location.reload();
+                } else if (d.code === 1032) {
+                    clearInterval(pollTimer);
+                    document.getElementById('mpesaProgress').classList.add('hidden');
+                    document.getElementById('mpesaFailed').classList.remove('hidden');
+                    document.getElementById('mpesaFailMsg').textContent = 'You cancelled the M-Pesa prompt. Try again.';
                 } else {
                     startPolling(id);
                 }
-            });
+            })
+            .catch(() => startPolling(id));
     }
 
     function retryPayment(id) {
