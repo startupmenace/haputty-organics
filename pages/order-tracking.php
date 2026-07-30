@@ -30,6 +30,7 @@ if ($orderRef) {
 // Return JSON for AJAX polling
 if (isset($_GET['ajax']) && $order) {
     header('Content-Type: application/json');
+    ob_clean();
     echo json_encode([
         'status' => $order['status'],
         'mpesa_result' => $order['mpesa_result'] ?? '',
