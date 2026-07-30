@@ -140,10 +140,7 @@ require_once __DIR__ . '/header.php';
                 <textarea name="details" rows="3" class="w-full border border-neutral-300 px-3 py-2 text-xs font-mono focus:border-black focus:outline-none"><?= escape($editProduct['details'] ?? '[]') ?></textarea>
             </div>
 
-            <div>
-                <label class="text-[11px] font-semibold text-neutral-600 block mb-1">Colors (JSON array, e.g. [{"name":"White","hex":"#FFF"}])</label>
-                <textarea name="colors" rows="3" class="w-full border border-neutral-300 px-3 py-2 text-xs font-mono focus:border-black focus:outline-none"><?= escape($editProduct['colors'] ?? '[]') ?></textarea>
-            </div>
+            <input type="hidden" name="colors" value="[]" />
 
             <div>
                 <label class="text-[11px] font-semibold text-neutral-600 block mb-1">Images (JSON array of URLs)</label>

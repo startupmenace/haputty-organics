@@ -89,8 +89,7 @@ require_once __DIR__ . '/header.php';
                     <thead>
                         <tr class="bg-neutral-50 text-neutral-500 font-bold uppercase text-[10px]">
                             <th class="text-left p-2">Product</th>
-                            <th class="text-left p-2">Color</th>
-                            <th class="text-center p-2">Qty</th>
+                                <th class="text-center p-2">Qty</th>
                             <th class="text-right p-2">Price</th>
                             <th class="text-right p-2">Total</th>
                         </tr>
@@ -99,7 +98,6 @@ require_once __DIR__ . '/header.php';
                         <?php foreach ($items as $item): ?>
                             <tr class="border-t border-neutral-100">
                                 <td class="p-2 font-semibold"><?= escape($item['product_title']) ?></td>
-                                <td class="p-2 text-neutral-500"><?= escape($item['color'] ?? '-') ?></td>
                                 <td class="p-2 text-center"><?= (int)$item['quantity'] ?></td>
                                 <td class="p-2 text-right font-mono">Ksh <?= number_format($item['price']) ?></td>
                                 <td class="p-2 text-right font-mono font-bold">Ksh <?= number_format((float)$item['price'] * (int)$item['quantity']) ?></td>
@@ -108,7 +106,7 @@ require_once __DIR__ . '/header.php';
                     </tbody>
                     <tfoot>
                         <tr class="border-t border-black font-bold">
-                            <td colspan="4" class="p-2 text-right text-xs">Total</td>
+                            <td colspan="3" class="p-2 text-right text-xs">Total</td>
                             <td class="p-2 text-right font-mono">Ksh <?= number_format($viewOrder['total']) ?></td>
                         </tr>
                     </tfoot>

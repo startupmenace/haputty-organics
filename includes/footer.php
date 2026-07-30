@@ -77,7 +77,6 @@ function loadCartItems() {
                         <img src="${item.image}" alt="" class="w-16 h-16 object-contain bg-[#f5f5f5] border p-1" />
                         <div class="flex-1 space-y-1">
                             <h4 class="font-semibold text-black leading-snug">${item.title}</h4>
-                            <p class="text-[11px] text-neutral-500">Color: ${item.color}</p>
                             <div class="font-mono font-bold text-black">Ksh ${item.price.toLocaleString()}.00</div>
                             <div class="flex items-center justify-between pt-1">
                                 <div class="flex items-center border border-black">

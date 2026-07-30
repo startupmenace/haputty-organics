@@ -16,7 +16,7 @@ INSERT INTO products (title, category_id, price, original_price, rating, reviews
   'Achieve dentist-grade teeth whitening from home in just 16 minutes per day. Features dual-light technology (Blue LED for fast whitening + Red LED for gum care) with 32 high-powered cold light emitters.',
   '[\"32 Dual LED Light Emitters (Blue & Red light therapeutic wavelength)\",\"Includes 4x Carbamide Peroxide Non-Sensitivity Gel Pens (35% concentration)\",\"Wireless magnetic fast-charging base with IPX7 waterproof mouthpiece\",\"Visibly whiter teeth by up to 8 shades in 3 consecutive treatments\",\"Enamel-safe formula with potassium nitrate to protect sensitive teeth\"]',
   '[{\"key\":\"Light Technology\",\"val\":\"32 Cold-Light LEDs (460-480nm)\"},{\"key\":\"Gel Formula\",\"val\":\"35% Carbamide Peroxide + Phthalimidoperoxycaproic Acid\"},{\"key\":\"Treatment Time\",\"val\":\"16 Minutes Auto Timer\"},{\"key\":\"Battery Life\",\"val\":\"20 Treatments per Charge\"},{\"key\":\"Warranty\",\"val\":\"1 Year Official HAPUTTY ORGANICS Warranty\"}]',
-  '[{\"name\":\"Arctic White\",\"hex\":\"#FFFFFF\"},{\"name\":\"Onyx Black\",\"hex\":\"#18181B\"}]',
+  '[]',
   '[\"https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80\",\"https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80\"]',
   1
 ),
@@ -26,7 +26,7 @@ INSERT INTO products (title, category_id, price, original_price, rating, reviews
   'Removes up to 10x more surface stains and deep interdental plaque than manual brushing. Powered by sonic levitation motor reaching 40,000 micro-vibrations per minute.',
   '[\"40,000 Micro-Brushes per minute sonic levitation motor\",\"5 Cleaning Modes: Whiten, Clean, Polish, Sensitive, Massage\",\"UV Sanitizing Travel Case kills 99.9% of oral bacteria on brush heads\",\"Includes 6 DuPont soft diamond-cut replacement brush heads\",\"30 Days battery life on a single USB-C fast charge\"]',
   '[{\"key\":\"Vibration Frequency\",\"val\":\"40,000 VPM\"},{\"key\":\"Waterproof Level\",\"val\":\"IPX7 Washable\"},{\"key\":\"Timer\",\"val\":\"2-Minute Smart Quad-Pacer\"}]',
-  '[{\"name\":\"Matte Black\",\"hex\":\"#18181B\"},{\"name\":\"Pearl White\",\"hex\":\"#F8FAFC\"},{\"name\":\"Rose Gold\",\"hex\":\"#FB7185\"}]',
+  '[]',
   '[\"https://images.unsplash.com/photo-1559591937-e58af10079d3?auto=format&fit=crop&w=800&q=80\",\"https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80\"]',
   1
 ),
@@ -36,7 +36,7 @@ INSERT INTO products (title, category_id, price, original_price, rating, reviews
   'Non-invasive purple color-correcting technology that neutralizes yellow undertones on tooth surface enamel to instantly restore natural brightness.',
   '[\"Water-soluble purple dye formula cancels yellow tones\",\"Instant bright visual effect for photos and daily boost\",\"100% safe on tooth enamel and dental work\"]',
   '[{\"key\":\"Volume\",\"val\":\"30ml Pump Bottle\"},{\"key\":\"Usage\",\"val\":\"Daily Post-Brushing Rinse or Brush\"}]',
-  '[{\"name\":\"Deep Violet\",\"hex\":\"#581C87\"}]',
+  '[]',
   '[\"https://images.unsplash.com/photo-1608248597261-83325803d450?auto=format&fit=crop&w=800&q=80\"]',
   1
 ),
@@ -46,7 +46,7 @@ INSERT INTO products (title, category_id, price, original_price, rating, reviews
   'Precision twist-pen applicators packed with active whitening serum to target individual stubborn coffee, wine, and tea stains accurately.',
   '[\"4 Precision Brush-tip Pens included\",\"Fast 15-minute quick dry formulation\",\"Refreshing Natural Peppermint Essence\"]',
   '[{\"key\":\"Total Volume\",\"val\":\"4 x 2ml Pens\"},{\"key\":\"Applications\",\"val\":\"Up to 80 Whitening Sessions\"}]',
-  '[{\"name\":\"Clear Mint\",\"hex\":\"#E2E8F0\"}]',
+  '[]',
   '[\"https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80\"]',
   1
 ),
@@ -66,7 +66,7 @@ INSERT INTO products (title, category_id, price, original_price, rating, reviews
   'Flushes away trapped food debris and plaque along gumlines where dental floss cannot reach. Essential for braces, implants, and veneer care.',
   '[\"1400-1800 Water Pulses per minute high pressure jet\",\"4 Pressure Modes: Soft, Normal, Pulse, Custom DIY\",\"Large 300ml detachable leak-proof water reservoir\",\"Includes 4 interchangeable 360° rotating jet nozzles\"]',
   '[{\"key\":\"Tank Capacity\",\"val\":\"300ml\"},{\"key\":\"Pressure Range\",\"val\":\"30 - 120 PSI\"}]',
-  '[{\"name\":\"Classic White\",\"hex\":\"#FFFFFF\"},{\"name\":\"Midnight Black\",\"hex\":\"#18181B\"}]',
+  '[]',
   '[\"https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=800&q=80\",\"https://images.unsplash.com/photo-1559591937-e58af10079d3?auto=format&fit=crop&w=800&q=80\"]',
   1
 ),
@@ -76,7 +76,7 @@ INSERT INTO products (title, category_id, price, original_price, rating, reviews
   '100% natural ultra-fine activated coconut shell charcoal powder. Adsorbs surface enamel discolorations and detoxifies mouth odors naturally.',
   '[\"100% Organic Coconut Shell Charcoal\",\"Includes Ultra-Soft Biodegradable Bamboo Brush\",\"Chemical-free, Peroxide-free, Fluoride-free\"]',
   '[{\"key\":\"Weight\",\"val\":\"50g Jar\"}]',
-  '[{\"name\":\"Natural Charcoal\",\"hex\":\"#27272A\"}]',
+  '[]',
   '[\"https://images.unsplash.com/photo-1608248597261-83325803d450?auto=format&fit=crop&w=800&q=80\"]',
   1
 ),

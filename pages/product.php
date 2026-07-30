@@ -154,7 +154,6 @@ $relatedProducts = $stmtRel->fetchAll();
                     <?php
                     $relImages = getProductImages($rel['images']);
                     $relImg = !empty($relImages) ? $relImages[0] : '';
-                    $relColors = getProductColors($rel['colors']);
                     ?>
                     <div class="bg-white border border-neutral-200 overflow-hidden flex flex-col justify-between group">
                         <div class="relative aspect-square bg-[#f5f5f5] overflow-hidden cursor-pointer" onclick="window.location='/index.php?page=product&id=<?= $rel['id'] ?>'">
@@ -192,25 +191,21 @@ function toggleWishlist(productId) {
 
 function buyNowPDP(productId) {
     const qty = document.getElementById('qtyInput').value;
-    const color = document.getElementById('selectedColor')?.value || 'Standard';
     const formData = new FormData();
     formData.append('action', 'add');
     formData.append('product_id', productId);
     formData.append('quantity', qty);
-    formData.append('color', color);
+    formData.append('color', 'Standard');
     fetch('/ajax/cart.php', { method: 'POST', body: formData }).then(r => r.json()).then(d => { if(d.success) window.location='/index.php?page=checkout'; });
 }
 
 function addToCartPDP(productId) {
     const qty = document.getElementById('qtyInput').value;
-    const color = document.getElementById('selectedColor')?.value || 'Standard';
     const formData = new FormData();
     formData.append('action', 'add');
     formData.append('product_id', productId);
     formData.append('quantity', qty);
-    formData.append('color', color);
+    formData.append('color', 'Standard');
     fetch('/ajax/cart.php', { method: 'POST', body: formData }).then(r => r.json()).then(d => { if(d.success) toggleCartDrawer(); });
 }
 </script>
-
-<input type="hidden" id="selectedColor" value="<?= escape($colors[0]['name'] ?? 'Standard') ?>" />

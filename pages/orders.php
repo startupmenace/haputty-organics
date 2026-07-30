@@ -43,7 +43,7 @@ $orders = $stmt->fetchAll();
                                 <?php endif; ?>
                                 <div class="flex-1">
                                     <span class="font-semibold text-black"><?= escape($item['product_title']) ?></span>
-                                    <span class="text-neutral-500 block text-[10px]">Qty: <?= (int)$item['quantity'] ?> &middot; Color: <?= escape($item['color'] ?? 'Standard') ?></span>
+                                    <span class="text-neutral-500 block text-[10px]">Qty: <?= (int)$item['quantity'] ?></span>
                                 </div>
                                 <span class="font-mono font-bold">Ksh <?= number_format((float)$item['price'] * (int)$item['quantity']) ?>.00</span>
                             </div>

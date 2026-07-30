@@ -235,7 +235,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <h4 class="font-semibold text-black truncate"><?= escape($item['title']) ?></h4>
-                                        <p class="text-[10px] text-neutral-500">Color: <?= escape($item['color'] ?? 'Standard') ?></p>
                                     </div>
                                     <div class="font-mono font-bold text-black">Ksh <?= number_format((float)$item['price'] * (int)$item['quantity']) ?>.00</div>
                                 </div>
