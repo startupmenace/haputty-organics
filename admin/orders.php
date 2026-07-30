@@ -113,7 +113,7 @@ require_once __DIR__ . '/header.php';
                 </table>
             </div>
 
-            <div class="border-t border-neutral-200 pt-4 grid grid-cols-2 gap-4 text-xs">
+            <div class="border-t border-neutral-200 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
                     <span class="text-neutral-500">Payment Method:</span>
                     <span class="font-bold text-black ml-2"><?= escape(strtoupper($viewOrder['payment_method'] ?? 'M-PESA')) ?></span>
@@ -122,6 +122,20 @@ require_once __DIR__ . '/header.php';
                     <span class="text-neutral-500">Phone:</span>
                     <span class="font-bold text-black ml-2">+<?= escape($viewOrder['phone'] ?? 'N/A') ?></span>
                 </div>
+                <div>
+                    <span class="text-neutral-500">Delivery Method:</span>
+                    <span class="font-bold text-black ml-2 capitalize"><?= escape($viewOrder['delivery_method'] ?? 'N/A') ?></span>
+                </div>
+                <div>
+                    <span class="text-neutral-500">Delivery Location:</span>
+                    <span class="font-bold text-black ml-2"><?= escape($viewOrder['delivery_location'] ?? 'N/A') ?></span>
+                </div>
+                <?php if ($viewOrder['delivery_instructions']): ?>
+                <div class="md:col-span-2">
+                    <span class="text-neutral-500">Delivery Instructions:</span>
+                    <span class="font-bold text-black ml-2"><?= escape($viewOrder['delivery_instructions']) ?></span>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
 

@@ -91,6 +91,18 @@ $currentStep = $order ? array_search($order['status'], $statusSteps) : -1;
                     <span>Phone</span>
                     <span class="font-semibold text-black">+<?= escape($order['phone'] ?? 'N/A') ?></span>
                 </div>
+                <?php if ($order['delivery_location']): ?>
+                <div class="flex justify-between text-neutral-500">
+                    <span>Delivery</span>
+                    <span class="font-semibold text-black"><?= escape($order['delivery_location']) ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if ($order['delivery_instructions']): ?>
+                <div class="flex justify-between text-neutral-500">
+                    <span>Instructions</span>
+                    <span class="font-semibold text-black"><?= escape($order['delivery_instructions']) ?></span>
+                </div>
+                <?php endif; ?>
                 <div class="flex justify-between text-base font-extrabold text-black border-t border-black pt-2">
                     <span>Total Paid</span>
                     <span class="font-mono">Ksh <?= number_format($order['total']) ?>.00</span>

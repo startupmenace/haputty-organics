@@ -36,6 +36,7 @@ $pendingOrders = $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pendin
             <a href="/admin/orders.php" class="block px-3 py-2.5 font-semibold uppercase tracking-wider no-underline <?= $adminPage === 'orders' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white hover:bg-neutral-800' ?>">Orders</a>
             <a href="/admin/customers.php" class="block px-3 py-2.5 font-semibold uppercase tracking-wider no-underline <?= $adminPage === 'customers' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white hover:bg-neutral-800' ?>">Customers</a>
             <a href="/admin/reports.php" class="block px-3 py-2.5 font-semibold uppercase tracking-wider no-underline <?= $adminPage === 'reports' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white hover:bg-neutral-800' ?>">Reports</a>
+            <a href="/admin/shop-locations.php" class="block px-3 py-2.5 font-semibold uppercase tracking-wider no-underline <?= $adminPage === 'shop-locations' ? 'bg-white text-black' : 'text-neutral-400 hover:text-white hover:bg-neutral-800' ?>">Shop Locations</a>
         </nav>
         <div class="p-4 border-t border-neutral-800">
             <a href="/" class="block text-[10px] text-neutral-500 hover:text-white mb-2">View Store</a>

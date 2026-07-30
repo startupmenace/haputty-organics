@@ -48,8 +48,19 @@ CREATE TABLE orders (
   shipping_address TEXT,
   phone VARCHAR(50),
   notes TEXT,
+  delivery_method VARCHAR(20) DEFAULT NULL,
+  delivery_location VARCHAR(255) DEFAULT NULL,
+  delivery_instructions TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE shop_locations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  address TEXT NOT NULL,
+  is_active TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE order_items (

@@ -4,7 +4,6 @@ if (isset($_GET['buy_now'])) {
     $buyId = (int)$_GET['buy_now'];
     if (!isset($_SESSION['user_id'])) {
         if (!isset($_SESSION['cart'])) $_SESSION['cart'] = [];
-        // Check if already in cart
         $found = false;
         foreach ($_SESSION['cart'] as &$item) {
             if ($item['product_id'] == $buyId) { $item['quantity']++; $found = true; break; }
@@ -53,7 +52,9 @@ foreach ($cartItems as $item) {
 
 $finalTotal = $subtotal;
 
-// Handle form submission
+// Get active shop locations
+$shopLocations = $pdo->query("SELECT * FROM shop_locations WHERE is_active = 1 ORDER BY name")->fetchAll();
+
 $orderPlaced = false;
 $orderRef = '';
 $error = '';
@@ -63,21 +64,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     $lastName = trim($_POST['last_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
-    $shippingMethod = $_POST['shipping_method'] ?? 'standard';
+    $deliveryMethod = $_POST['delivery_method'] ?? 'delivery';
+    $deliveryLocation = trim($_POST['delivery_location'] ?? '');
+    $deliveryInstructions = trim($_POST['delivery_instructions'] ?? '');
 
     if (empty($firstName) || empty($lastName) || empty($email) || empty($phone)) {
         $error = 'Please fill in all required fields.';
+    } elseif (empty($deliveryLocation)) {
+        $error = 'Please select a delivery location or pickup point.';
     } elseif (empty($cartItems)) {
         $error = 'Your cart is empty.';
     } else {
         $orderRef = generateOrderRef();
 
         if (isset($_SESSION['user_id'])) {
-            $stmt = $pdo->prepare("INSERT INTO orders (user_id, order_ref, total, status, payment_method, phone) VALUES (?, ?, ?, 'pending', 'mpesa', ?)");
-            $stmt->execute([$_SESSION['user_id'], $orderRef, $finalTotal, $phone]);
+            $stmt = $pdo->prepare("INSERT INTO orders (user_id, order_ref, total, status, payment_method, phone, delivery_method, delivery_location, delivery_instructions) VALUES (?, ?, ?, 'pending', 'mpesa', ?, ?, ?, ?)");
+            $stmt->execute([$_SESSION['user_id'], $orderRef, $finalTotal, $phone, $deliveryMethod, $deliveryLocation, $deliveryInstructions]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO orders (order_ref, total, status, payment_method, phone) VALUES (?, ?, 'pending', 'mpesa', ?)");
-            $stmt->execute([$orderRef, $finalTotal, $phone]);
+            $stmt = $pdo->prepare("INSERT INTO orders (order_ref, total, status, payment_method, phone, delivery_method, delivery_location, delivery_instructions) VALUES (?, ?, 'pending', 'mpesa', ?, ?, ?, ?)");
+            $stmt->execute([$orderRef, $finalTotal, $phone, $deliveryMethod, $deliveryLocation, $deliveryInstructions]);
         }
 
         $orderId = $pdo->lastInsertId();
@@ -97,14 +102,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             ]);
         }
 
-        // Clear cart
         if (isset($_SESSION['user_id'])) {
             $pdo->prepare("DELETE FROM cart WHERE user_id = ?")->execute([$_SESSION['user_id']]);
         } else {
             $_SESSION['cart'] = [];
         }
 
-        // If user is not logged in, store order_ref in session for tracking
         if (!isset($_SESSION['user_id'])) {
             $_SESSION['guest_order'] = $orderRef;
         }
@@ -112,6 +115,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         $orderPlaced = true;
     }
 }
+
+// Kenyan counties data for autocomplete
+$counties = [
+    'Baringo' => ['Kabarnet', 'Eldama Ravine', 'Mogotio'],
+    'Bomet' => ['Bomet', 'Sotik', 'Ndanai'],
+    'Bungoma' => ['Bungoma', 'Webuye', 'Kimilili'],
+    'Busia' => ['Busia', 'Port Victoria', 'Nambale'],
+    'Elgeyo Marakwet' => ['Iten', 'Kapsowar', 'Chebiemit'],
+    'Embu' => ['Embu', 'Runyenjes', 'Manyatta'],
+    'Garissa' => ['Garissa', 'Masalani', 'Hulugho'],
+    'Homa Bay' => ['Homa Bay', 'Mbita', 'Oyugis'],
+    'Isiolo' => ['Isiolo', 'Merti', 'Garbatulla'],
+    'Kajiado' => ['Kajiado', 'Ngong', 'Kitengela', 'Isinya'],
+    'Kakamega' => ['Kakamega', 'Mumias', 'Butere'],
+    'Kericho' => ['Kericho', 'Londiani', 'Kipkelion'],
+    'Kiambu' => ['Kiambu', 'Thika', 'Ruiru', 'Limuru', 'Kikuyu', 'Juja'],
+    'Kilifi' => ['Kilifi', 'Malindi', 'Mariakani', 'Mtwapa'],
+    'Kirinyaga' => ['Kerugoya', 'Wanguru', 'Sagana'],
+    'Kisii' => ['Kisii', 'Ogembo', 'Keroka'],
+    'Kisumu' => ['Kisumu', 'Ahero', 'Muhoroni'],
+    'Kitui' => ['Kitui', 'Mwingi', 'Mutomo'],
+    'Kwale' => ['Kwale', 'Msambweni', 'Lunga Lunga'],
+    'Laikipia' => ['Nanyuki', 'Nyahururu', 'Rumuruti'],
+    'Lamu' => ['Lamu', 'Mpeketoni', 'Hindi'],
+    'Machakos' => ['Machakos', 'Athi River', 'Mavoko', 'Kangundo', 'Matuu'],
+    'Makueni' => ['Wote', 'Emali', 'Kibwezi'],
+    'Mandera' => ['Mandera', 'Elwak', 'Rhamu'],
+    'Marsabit' => ['Marsabit', 'Moyale', 'North Horr', 'Laisamis'],
+    'Meru' => ['Meru', 'Maua', 'Nkubu', 'Chuka'],
+    'Migori' => ['Migori', 'Kehancha', 'Rongo'],
+    'Mombasa' => ['Mombasa CBD', 'Nyali', 'Bamburi', 'Likoni', 'Changamwe'],
+    'Muranga' => ['Muranga', 'Kangema', 'Kenyatta'],
+    'Nairobi' => ['Nairobi CBD', 'Westlands', 'Kilimani', 'Karen', 'Langata', 'Eastlands', 'South B', 'South C', 'Embakasi', 'Ruaraka'],
+    'Nakuru' => ['Nakuru', 'Naivasha', 'Gilgil', 'Molo', 'Njoro'],
+    'Nandi' => ['Kapsabet', 'Nandi Hills', 'Kobujoi'],
+    'Narok' => ['Narok', 'Mai Mahiu', 'Kilgoris'],
+    'Nyamira' => ['Nyamira', 'Nyansiongo', 'Keroka'],
+    'Nyandarua' => ['Ol Kalou', 'Kinamba', 'Engineer'],
+    'Nyeri' => ['Nyeri', 'Karatina', 'Othaya', 'Mweiga'],
+    'Samburu' => ['Maralal', 'Baragoi', 'Archers Post'],
+    'Siaya' => ['Siaya', 'Bondo', 'Ugunja'],
+    'Taita Taveta' => ['Voi', 'Taveta', 'Wundanyi'],
+    'Tana River' => ['Hola', 'Garsen', 'Madogo'],
+    'Tharaka Nithi' => ['Chuka', 'Chogoria', 'Marimanti'],
+    'Trans Nzoia' => ['Kitale', 'Kwanza', 'Endebess'],
+    'Turkana' => ['Lodwar', 'Lokichoggio', 'Kakuma'],
+    'Uasin Gishu' => ['Eldoret', 'Moiben', 'Turbo'],
+    'Vihiga' => ['Vihiga', 'Luanda', 'Majengo'],
+    'Wajir' => ['Wajir', 'Habaswein', 'Buna'],
+    'West Pokot' => ['Kapenguria', 'Kacheliba', 'Ortum'],
+];
 ?>
 
 <?php if ($orderPlaced): ?>
@@ -125,8 +179,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         </p>
         <div class="bg-neutral-50 p-4 text-left text-xs font-mono space-y-1 border border-neutral-200">
             <div><span class="text-neutral-500">Order Ref:</span> <?= escape($orderRef) ?></div>
-            <div><span class="text-neutral-500">Amount Paid:</span> Ksh <?= number_format($finalTotal) ?>.00</div>
-            <div><span class="text-neutral-500">Payment Method:</span> Safaricom M-PESA STK Push</div>
+            <div><span class="text-neutral-500">Amount:</span> Ksh <?= number_format($finalTotal) ?>.00</div>
+            <div><span class="text-neutral-500">Delivery:</span> <?= escape($deliveryLocation ?? '') ?></div>
         </div>
         <a href="/?page=order-tracking&ref=<?= urlencode($orderRef) ?>" class="block w-full bg-black text-white text-xs font-bold uppercase py-3 hover:bg-neutral-800 no-underline">
             Track Your Order
@@ -185,11 +239,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                 </div>
 
                 <div class="bg-white p-6 border border-neutral-200 space-y-4">
-                    <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">SHIPPING METHOD</div>
+                    <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">DELIVERY</div>
                     <h2 class="text-sm font-bold text-black">How would you like to receive your order?</h2>
-                    <select name="shipping_method" class="w-full bg-white border border-neutral-300 p-3 text-xs focus:border-black focus:outline-none">
-                        <option value="standard">Nairobi & Nationwide Express Delivery - FREE</option>
-                    </select>
+
+                    <div class="flex border border-neutral-300 text-xs font-semibold">
+                        <button type="button" onclick="setDeliveryMethod('delivery')" id="deliveryTab" class="flex-1 py-3 px-4 bg-black text-white transition-colors cursor-pointer">Delivery</button>
+                        <button type="button" onclick="setDeliveryMethod('pickup')" id="pickupTab" class="flex-1 py-3 px-4 bg-white text-neutral-600 hover:text-black transition-colors cursor-pointer">Shop Pickup</button>
+                    </div>
+
+                    <input type="hidden" name="delivery_method" id="deliveryMethod" value="delivery" />
+                    <input type="hidden" name="delivery_location" id="deliveryLocation" value="" />
+
+                    <!-- Delivery -->
+                    <div id="deliverySection">
+                        <label class="text-[11px] font-semibold text-neutral-600 block mb-1">County / Town</label>
+                        <div class="relative">
+                            <input type="text" id="locationSearch" placeholder="Search for your county or town..." autocomplete="off" class="w-full bg-white border border-neutral-300 px-3 py-2 text-xs focus:border-black focus:outline-none" />
+                            <div id="locationResults" class="absolute top-full left-0 right-0 bg-white border border-neutral-200 max-h-48 overflow-y-auto hidden z-10 shadow-md"></div>
+                        </div>
+                        <p class="text-[10px] text-neutral-400 mt-1">Start typing your county or town name</p>
+
+                        <div id="deliveryInstructionsSection" class="hidden mt-4">
+                            <label class="text-[11px] font-semibold text-neutral-600 block mb-1">Delivery Instructions (optional)</label>
+                            <textarea name="delivery_instructions" rows="2" placeholder="E.g. Leave at reception, call when nearby..." class="w-full bg-white border border-neutral-300 px-3 py-2 text-xs focus:border-black focus:outline-none"><?= escape($_POST['delivery_instructions'] ?? '') ?></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Pickup -->
+                    <div id="pickupSection" class="hidden">
+                        <label class="text-[11px] font-semibold text-neutral-600 block mb-1">Pickup Location</label>
+                        <select name="pickup_location" id="pickupLocation" onchange="document.getElementById('deliveryLocation').value='Pickup: '+this.options[this.selectedIndex].text; document.getElementById('deliveryInstructionsSection').classList.remove('hidden');" class="w-full bg-white border border-neutral-300 px-3 py-2 text-xs focus:border-black focus:outline-none">
+                            <option value="">Select a pickup location</option>
+                            <?php foreach ($shopLocations as $loc): ?>
+                                <option value="<?= $loc['id'] ?>"><?= escape($loc['name']) ?> &mdash; <?= escape($loc['address']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <?php if (empty($shopLocations)): ?>
+                            <p class="text-[10px] text-amber-600 mt-1">No pickup locations available yet. Please choose delivery.</p>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <div class="bg-white p-6 border border-neutral-200 space-y-4">
@@ -208,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                         </div>
                         <span class="bg-neutral-100 text-black text-[10px] font-bold px-2 py-0.5 border border-neutral-300">Fastest</span>
                     </div>
-                    <button type="submit" name="place_order" value="1" <?= empty($cartItems) ? 'disabled' : '' ?> class="w-full bg-[#3B4252] hover:bg-black text-white font-bold text-xs uppercase py-4 transition-colors shadow-none text-center cursor-pointer">
+                    <button type="submit" name="place_order" value="1" <?= empty($cartItems) ? 'disabled' : '' ?> class="w-full bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase py-4 transition-colors text-center cursor-pointer">
                         Place Order
                     </button>
                     <p class="text-[10px] text-neutral-400 text-center">You will see a confirmation once payment succeeds. Do not close this tab.</p>
@@ -254,9 +342,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                         </div>
                     </div>
 
-                    <p class="text-[10px] text-neutral-400 pt-2 border-t border-neutral-100">This checkout locks prices until Jul 30, 18:30.</p>
+                    <p class="text-[10px] text-neutral-400 pt-2 border-t border-neutral-100">This checkout locks prices until <?= date('M d, H:i', strtotime('+30 minutes')) ?>.</p>
                 </div>
             </div>
         </form>
     </div>
+
+<script>
+// Kenyan counties data
+const counties = <?= json_encode($counties) ?>;
+
+function setDeliveryMethod(method) {
+    document.getElementById('deliveryMethod').value = method;
+    document.getElementById('deliveryLocation').value = '';
+    document.getElementById('deliveryInstructionsSection').classList.add('hidden');
+    if (method === 'delivery') {
+        document.getElementById('deliveryTab').className = 'flex-1 py-3 px-4 bg-black text-white transition-colors cursor-pointer';
+        document.getElementById('pickupTab').className = 'flex-1 py-3 px-4 bg-white text-neutral-600 hover:text-black transition-colors cursor-pointer';
+        document.getElementById('deliverySection').classList.remove('hidden');
+        document.getElementById('pickupSection').classList.add('hidden');
+    } else {
+        document.getElementById('pickupTab').className = 'flex-1 py-3 px-4 bg-black text-white transition-colors cursor-pointer';
+        document.getElementById('deliveryTab').className = 'flex-1 py-3 px-4 bg-white text-neutral-600 hover:text-black transition-colors cursor-pointer';
+        document.getElementById('deliverySection').classList.add('hidden');
+        document.getElementById('pickupSection').classList.remove('hidden');
+    }
+}
+
+// Autocomplete
+const searchInput = document.getElementById('locationSearch');
+const resultsEl = document.getElementById('locationResults');
+
+searchInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase().trim();
+    if (query.length < 1) {
+        resultsEl.classList.add('hidden');
+        resultsEl.innerHTML = '';
+        return;
+    }
+
+    let matches = [];
+    for (const [county, towns] of Object.entries(counties)) {
+        const countyLower = county.toLowerCase();
+        if (countyLower.includes(query)) {
+            towns.forEach(town => matches.push({ county, town }));
+        } else {
+            towns.forEach(town => {
+                if (town.toLowerCase().includes(query)) {
+                    matches.push({ county, town });
+                }
+            });
+        }
+    }
+
+    matches = matches.slice(0, 10);
+
+    if (matches.length === 0) {
+        resultsEl.innerHTML = '<div class="p-2 text-neutral-400 text-xs">No locations found</div>';
+        resultsEl.classList.remove('hidden');
+        return;
+    }
+
+    resultsEl.innerHTML = matches.map(m =>
+        '<div class="p-2 hover:bg-neutral-100 cursor-pointer text-xs border-b border-neutral-100" onclick="selectLocation(\'' + m.county + '\', \'' + m.town + '\')">' +
+        '<span class="font-semibold text-black">' + m.county + '</span> <span class="text-neutral-500">&mdash;</span> <span>' + m.town + '</span>' +
+        '</div>'
+    ).join('');
+    resultsEl.classList.remove('hidden');
+});
+
+function selectLocation(county, town) {
+    const label = county + ' - ' + town;
+    searchInput.value = label;
+    document.getElementById('deliveryLocation').value = label;
+    resultsEl.classList.add('hidden');
+    document.getElementById('deliveryInstructionsSection').classList.remove('hidden');
+}
+
+document.addEventListener('click', function(e) {
+    if (!document.querySelector('#deliverySection .relative').contains(e.target)) {
+        resultsEl.classList.add('hidden');
+    }
+});
+</script>
 <?php endif; ?>
