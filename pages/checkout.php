@@ -131,12 +131,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             $_SESSION['cart'] = [];
         }
 
-        if (!isset($_SESSION['user_id'])) {
-            $_SESSION['guest_order'] = $orderRef;
-        }
+        $_SESSION['pending_order'] = [
+            'id' => $orderId,
+            'ref' => $orderRef,
+            'total' => $finalTotal,
+            'phone' => $phone,
+            'delivery_location' => $deliveryLocation,
+        ];
 
         $orderPlaced = true;
         $pendingOrderId = $orderId;
+    }
+}
+
+// Restore pending order from session on page load
+if (!$orderPlaced && isset($_SESSION['pending_order'])) {
+    $po = $_SESSION['pending_order'];
+    $pendingOrderId = (int)$po['id'];
+    $orderRef = $po['ref'];
+    $finalTotal = (float)$po['total'];
+    $phone = $po['phone'];
+    $deliveryLocation = $po['delivery_location'];
+
+    $stmt = $pdo->prepare("SELECT status FROM orders WHERE id = ?");
+    $stmt->execute([$pendingOrderId]);
+    $poStatus = $stmt->fetchColumn();
+
+    if ($poStatus && !in_array($poStatus, ['cancelled', 'delivered'])) {
+        $orderPlaced = true;
+    } else {
+        unset($_SESSION['pending_order']);
     }
 }
 
@@ -205,7 +229,7 @@ $counties = [
             <div class="bg-neutral-50 p-4 text-left text-xs font-mono space-y-1 border border-neutral-200">
                 <div><span class="text-neutral-500">Order Ref:</span> <span class="font-bold text-black"><?= escape($orderRef) ?></span></div>
                 <div><span class="text-neutral-500">Amount:</span> <span class="font-bold text-black">Ksh <?= number_format($finalTotal) ?>.00</span></div>
-                <div><span class="text-neutral-500">Phone:</span> <span class="font-bold text-black">+<?= escape($phone) ?></span></div>
+                <div><span class="text-neutral-500">Phone:</span> <span class="font-bold text-black" id="displayPhone">+<?= escape($phone) ?></span></div>
                 <div><span class="text-neutral-500">Delivery:</span> <span class="font-bold text-black"><?= escape($deliveryLocation ?? '') ?></span></div>
             </div>
 
@@ -252,6 +276,16 @@ $counties = [
     let pollTimer = null;
     let pollSeconds = 15;
     let orderId = <?= $pendingOrderId ?>;
+    let debugEl = null;
+
+    function debug(msg) {
+        if (!debugEl) {
+            debugEl = document.createElement('pre');
+            debugEl.style.cssText = 'margin-top:1em;padding:8px;background:#fdd;color:#900;font-size:11px;text-align:left;white-space:pre-wrap;border:1px solid #c00';
+            document.getElementById('paymentScreen').appendChild(debugEl);
+        }
+        debugEl.textContent += msg + '\n';
+    }
 
     function initiatePayment(id) {
         document.getElementById('payBtn').disabled = true;
@@ -262,12 +296,15 @@ $counties = [
         f.append('phone', '<?= preg_replace('/[^0-9]/', '', $phone) ?>');
         f.append('amount', <?= $finalTotal ?>);
 
+        debug('Sending payment request... phone=' + '<?= preg_replace('/[^0-9]/', '', $phone) ?>' + ' amount=<?= $finalTotal ?>');
+
         fetch('/ajax/mpesa.php', { method: 'POST', body: f })
             .then(r => {
                 if (!r.ok) throw new Error('Server error ' + r.status);
                 return r.json();
             })
             .then(d => {
+                debug('Response: ' + JSON.stringify(d));
                 if (d.success) {
                     document.getElementById('mpesaStatus').classList.add('hidden');
                     document.getElementById('mpesaProgress').classList.remove('hidden');
@@ -281,6 +318,7 @@ $counties = [
                 }
             })
             .catch(e => {
+                debug('Fetch failed: ' + e.message);
                 document.getElementById('payBtn').disabled = false;
                 document.getElementById('payBtn').textContent = 'Pay Ksh <?= number_format($finalTotal) ?> with M-Pesa';
                 document.getElementById('mpesaFailMsg').textContent = 'Could not reach payment server. Please try again.';
