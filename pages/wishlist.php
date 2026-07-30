@@ -21,7 +21,7 @@ if (!empty($wishlistIds)) {
             <p class="text-neutral-500 text-xs uppercase">Your wishlist is currently empty.</p>
         </div>
     <?php else: ?>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             <?php foreach ($products as $product): ?>
                 <?php
                 $images = getProductImages($product['images']);
@@ -29,24 +29,24 @@ if (!empty($wishlistIds)) {
                 ?>
                 <div class="bg-white border border-neutral-200 overflow-hidden flex flex-col justify-between group">
                     <div class="relative aspect-square bg-[#f5f5f5] overflow-hidden cursor-pointer" onclick="window.location='/index.php?page=product&id=<?= $product['id'] ?>'">
-                        <img src="<?= escape($img) ?>" alt="<?= escape($product['title']) ?>" class="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300" />
-                        <button onclick="event.stopPropagation(); toggleWishlist(<?= $product['id'] ?>)" class="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full text-red-500 cursor-pointer">
+                        <img src="<?= escape($img) ?>" alt="<?= escape($product['title']) ?>" class="w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-500" />
+                        <button onclick="event.stopPropagation(); toggleWishlist(<?= $product['id'] ?>)" class="absolute top-3 right-3 p-2 bg-white/90 rounded-full text-red-500 cursor-pointer shadow-sm">
                             <svg class="w-4 h-4 fill-red-500 text-red-500" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
                         </button>
                     </div>
-                    <div class="p-3 sm:p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
                         <div>
-                            <h3 onclick="window.location='/index.php?page=product&id=<?= $product['id'] ?>'" class="text-xs font-medium text-neutral-900 line-clamp-2 hover:text-black cursor-pointer leading-snug mb-2"><?= escape($product['title']) ?></h3>
+                            <h3 onclick="window.location='/index.php?page=product&id=<?= $product['id'] ?>'" class="text-sm font-semibold text-neutral-900 line-clamp-2 hover:text-black cursor-pointer leading-snug mb-2"><?= escape($product['title']) ?></h3>
                             <div class="flex items-baseline gap-2">
-                                <span class="text-xs sm:text-sm font-bold text-black font-mono">Ksh <?= number_format($product['price']) ?>.00</span>
+                                <span class="text-sm sm:text-base font-bold text-black font-mono">Ksh <?= number_format($product['price']) ?>.00</span>
                                 <?php if ($product['original_price']): ?>
-                                    <span class="text-[11px] text-neutral-400 line-through font-mono">Ksh <?= number_format($product['original_price']) ?></span>
+                                    <span class="text-xs text-neutral-400 line-through font-mono">Ksh <?= number_format($product['original_price']) ?></span>
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-neutral-100">
-                            <button onclick="buyNow(<?= $product['id'] ?>)" class="w-full bg-black text-white text-[10px] sm:text-[11px] font-bold uppercase py-2 px-1 hover:bg-neutral-800 transition-colors text-center tracking-tight cursor-pointer">BUY NOW</button>
-                            <a href="/index.php?page=product&id=<?= $product['id'] ?>" class="w-full bg-white text-black border border-black text-[10px] sm:text-[11px] font-bold uppercase py-2 px-1 hover:bg-neutral-100 transition-colors text-center tracking-tight no-underline">VIEW</a>
+                        <div class="grid grid-cols-2 gap-2 pt-3 border-t border-neutral-100">
+                            <button onclick="buyNow(<?= $product['id'] ?>)" class="w-full bg-black text-white text-xs font-bold uppercase py-3 px-2 hover:bg-neutral-800 transition-colors text-center tracking-tight cursor-pointer">BUY NOW</button>
+                            <a href="/index.php?page=product&id=<?= $product['id'] ?>" class="w-full bg-white text-black border border-black text-xs font-bold uppercase py-3 px-2 hover:bg-neutral-100 transition-colors text-center tracking-tight no-underline">VIEW</a>
                         </div>
                     </div>
                 </div>

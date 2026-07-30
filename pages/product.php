@@ -149,7 +149,7 @@ $relatedProducts = $stmtRel->fetchAll();
     <?php if (!empty($relatedProducts)): ?>
         <section class="space-y-6 pt-6">
             <h2 class="text-sm md:text-base font-black tracking-widest uppercase text-black border-b border-neutral-200 pb-2">YOU MIGHT ALSO LIKE</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
                 <?php foreach ($relatedProducts as $rel): ?>
                     <?php
                     $relImages = getProductImages($rel['images']);
@@ -157,21 +157,21 @@ $relatedProducts = $stmtRel->fetchAll();
                     ?>
                     <div class="bg-white border border-neutral-200 overflow-hidden flex flex-col justify-between group">
                         <div class="relative aspect-square bg-[#f5f5f5] overflow-hidden cursor-pointer" onclick="window.location='/index.php?page=product&id=<?= $rel['id'] ?>'">
-                            <img src="<?= escape($relImg) ?>" alt="<?= escape($rel['title']) ?>" class="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300" />
+                            <img src="<?= escape($relImg) ?>" alt="<?= escape($rel['title']) ?>" class="w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-500" />
                         </div>
-                        <div class="p-3 sm:p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
                             <div>
-                                <h3 onclick="window.location='/index.php?page=product&id=<?= $rel['id'] ?>'" class="text-xs font-medium text-neutral-900 line-clamp-2 hover:text-black cursor-pointer leading-snug mb-2"><?= escape($rel['title']) ?></h3>
+                                <h3 onclick="window.location='/index.php?page=product&id=<?= $rel['id'] ?>'" class="text-sm font-semibold text-neutral-900 line-clamp-2 hover:text-black cursor-pointer leading-snug mb-2"><?= escape($rel['title']) ?></h3>
                                 <div class="flex items-baseline gap-2">
-                                    <span class="text-xs sm:text-sm font-bold text-black font-mono">Ksh <?= number_format($rel['price']) ?>.00</span>
+                                    <span class="text-sm sm:text-base font-bold text-black font-mono">Ksh <?= number_format($rel['price']) ?>.00</span>
                                     <?php if ($rel['original_price']): ?>
-                                        <span class="text-[11px] text-neutral-400 line-through font-mono">Ksh <?= number_format($rel['original_price']) ?></span>
+                                        <span class="text-xs text-neutral-400 line-through font-mono">Ksh <?= number_format($rel['original_price']) ?></span>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-neutral-100">
-                                <a href="/?page=checkout&buy_now=<?= $rel['id'] ?>" class="w-full bg-black text-white text-[10px] sm:text-[11px] font-bold uppercase py-2 px-1 hover:bg-neutral-800 transition-colors text-center tracking-tight no-underline">BUY NOW</a>
-                                <a href="/index.php?page=product&id=<?= $rel['id'] ?>" class="w-full bg-white text-black border border-black text-[10px] sm:text-[11px] font-bold uppercase py-2 px-1 hover:bg-neutral-100 transition-colors text-center tracking-tight no-underline">VIEW</a>
+                            <div class="grid grid-cols-2 gap-2 pt-3 border-t border-neutral-100">
+                                <a href="/?page=checkout&buy_now=<?= $rel['id'] ?>" class="w-full bg-black text-white text-xs font-bold uppercase py-3 px-2 hover:bg-neutral-800 transition-colors text-center tracking-tight no-underline">BUY NOW</a>
+                                <a href="/index.php?page=product&id=<?= $rel['id'] ?>" class="w-full bg-white text-black border border-black text-xs font-bold uppercase py-3 px-2 hover:bg-neutral-100 transition-colors text-center tracking-tight no-underline">VIEW</a>
                             </div>
                         </div>
                     </div>
