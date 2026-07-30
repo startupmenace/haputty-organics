@@ -263,7 +263,10 @@ $counties = [
         f.append('amount', <?= $finalTotal ?>);
 
         fetch('/ajax/mpesa.php', { method: 'POST', body: f })
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) throw new Error('Server error ' + r.status);
+                return r.json();
+            })
             .then(d => {
                 if (d.success) {
                     document.getElementById('mpesaStatus').classList.add('hidden');
@@ -276,6 +279,13 @@ $counties = [
                     document.getElementById('mpesaStatus').classList.add('hidden');
                     document.getElementById('mpesaFailed').classList.remove('hidden');
                 }
+            })
+            .catch(e => {
+                document.getElementById('payBtn').disabled = false;
+                document.getElementById('payBtn').textContent = 'Pay Ksh <?= number_format($finalTotal) ?> with M-Pesa';
+                document.getElementById('mpesaFailMsg').textContent = 'Could not reach payment server. Please try again.';
+                document.getElementById('mpesaStatus').classList.add('hidden');
+                document.getElementById('mpesaFailed').classList.remove('hidden');
             });
     }
 
