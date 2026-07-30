@@ -81,6 +81,7 @@ $orderPlaced = false;
 $pendingOrderId = 0;
 $orderRef = '';
 $error = '';
+$pendingNotice = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     $firstName = trim($_POST['first_name'] ?? '');
@@ -131,36 +132,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             $_SESSION['cart'] = [];
         }
 
-        $_SESSION['pending_order'] = [
-            'id' => $orderId,
-            'ref' => $orderRef,
-            'total' => $finalTotal,
-            'phone' => $phone,
-            'delivery_location' => $deliveryLocation,
-        ];
-
         $orderPlaced = true;
         $pendingOrderId = $orderId;
+
+        // Redirect to payment screen (POST-REDIRECT-GET)
+        header('Location: ?page=checkout&order=' . $orderId);
+        exit;
     }
 }
 
-// Restore pending order from session on page load
-if (!$orderPlaced && isset($_SESSION['pending_order'])) {
+// Restore payment screen on page refresh via GET param
+if (!$orderPlaced && isset($_GET['order'])) {
+    $restoreId = (int)$_GET['order'];
+    $stmt = $pdo->prepare("SELECT * FROM orders WHERE id = ?");
+    $stmt->execute([$restoreId]);
+    $restoreOrder = $stmt->fetch();
+
+    if ($restoreOrder) {
+        // Check ownership
+        $ownOk = true;
+        if ($restoreOrder['user_id']) {
+            $ownOk = isset($_SESSION['user_id']) && $restoreOrder['user_id'] == $_SESSION['user_id'];
+        }
+        if ($ownOk && in_array($restoreOrder['status'], ['pending'])) {
+            $pendingOrderId = (int)$restoreOrder['id'];
+            $orderRef = $restoreOrder['order_ref'];
+            $finalTotal = (float)$restoreOrder['total'];
+            $phone = $restoreOrder['phone'];
+            $deliveryLocation = $restoreOrder['delivery_location'];
+            $orderPlaced = true;
+        }
+    }
+}
+
+// Clear pending_order session when starting fresh checkout
+if (isset($_GET['cancel_pending'])) {
+    unset($_SESSION['pending_order']);
+} elseif (isset($_SESSION['pending_order']) && !$orderPlaced && !isset($_GET['order'])) {
     $po = $_SESSION['pending_order'];
-    $pendingOrderId = (int)$po['id'];
-    $orderRef = $po['ref'];
-    $finalTotal = (float)$po['total'];
-    $phone = $po['phone'];
-    $deliveryLocation = $po['delivery_location'];
-
     $stmt = $pdo->prepare("SELECT status FROM orders WHERE id = ?");
-    $stmt->execute([$pendingOrderId]);
-    $poStatus = $stmt->fetchColumn();
-
-    if ($poStatus && !in_array($poStatus, ['cancelled', 'delivered'])) {
-        $orderPlaced = true;
-    } else {
+    $stmt->execute([$po['id']]);
+    $st = $stmt->fetchColumn();
+    if (!$st || in_array($st, ['confirmed', 'processing', 'shipped', 'delivered', 'cancelled'])) {
         unset($_SESSION['pending_order']);
+    } else {
+        // Still pending — show notice at top of form
+        $pendingNotice = $po;
     }
 }
 
@@ -416,6 +433,15 @@ $counties = [
 
         <?php if ($error): ?>
             <div class="max-w-6xl mx-auto bg-red-50 border border-red-200 p-4 text-xs text-red-700 font-semibold"><?= escape($error) ?></div>
+        <?php endif; ?>
+
+        <?php if ($pendingNotice): ?>
+            <div class="max-w-6xl mx-auto bg-amber-50 border border-amber-200 p-4 text-xs space-y-2">
+                <div class="font-bold text-amber-800">You have an unpaid order</div>
+                <div class="text-amber-700">Order <strong><?= escape($pendingNotice['ref']) ?></strong> (Ksh <?= number_format($pendingNotice['total']) ?>) is still pending payment.</div>
+                <a href="?page=checkout&order=<?= (int)$pendingNotice['id'] ?>" class="inline-block bg-amber-800 text-white px-4 py-1.5 text-[10px] font-bold uppercase no-underline hover:bg-amber-900">Complete Payment</a>
+                <a href="?page=checkout&cancel_pending=1" class="inline-block text-amber-800 underline px-4 py-1.5 text-[10px] font-bold uppercase">Cancel &amp; Start Fresh</a>
+            </div>
         <?php endif; ?>
 
         <form method="POST" action="/index.php?page=checkout" class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
