@@ -127,21 +127,7 @@ $relatedProducts = $stmtRel->fetchAll();
                     </div>
                 <?php endif; ?>
 
-                <div class="border border-neutral-200 mt-4">
-                    <button onclick="document.getElementById('specsPanel').classList.toggle('hidden'); document.getElementById('specsChevron').classList.toggle('rotate-180');" class="w-full p-4 text-left font-bold text-xs uppercase tracking-wider text-black flex items-center justify-between bg-neutral-50 cursor-pointer">
-                        <span>SPECIFICATIONS & WARRANTY</span>
-                        <svg id="specsChevron" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <div id="specsPanel" class="p-4 bg-white border-t border-neutral-200 text-xs text-neutral-600 space-y-2 font-mono">
-                        <?php foreach ($details as $d): ?>
-                            <div class="flex justify-between border-b border-neutral-100 pb-1">
-                                <span class="text-neutral-500"><?= escape($d['key']) ?>:</span>
-                                <span class="font-semibold text-black"><?= escape($d['val']) ?></span>
-                            </div>
-                        <?php endforeach; ?>
-                        <div class="pt-2 text-neutral-500 text-[11px]">Includes HAPUTTY ORGANICS 1-Year replacement guarantee for electrical components.</div>
-                    </div>
-                </div>
+
             </div>
         </div>
     </div>

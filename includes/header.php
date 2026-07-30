@@ -42,9 +42,9 @@ $catSlug = $_GET['category'] ?? 'all-products';
 
             <nav class="hidden lg:flex items-center gap-8 text-xs font-bold tracking-wider uppercase">
                 <a href="/" class="no-underline <?= $currentPage === 'home' ? 'text-black border-b-2 border-black pb-1' : 'text-neutral-500 hover:text-black' ?>">All Products</a>
-                <a href="/?category=teeth-whitening-kits" class="no-underline <?= $catSlug === 'teeth-whitening-kits' ? 'text-black border-b-2 border-black pb-1' : 'text-neutral-500 hover:text-black' ?>">Teeth Whitening Kits</a>
-                <a href="/?category=sonic-toothbrushes" class="no-underline <?= $catSlug === 'sonic-toothbrushes' ? 'text-black border-b-2 border-black pb-1' : 'text-neutral-500 hover:text-black' ?>">Sonic Toothbrushes</a>
-                <a href="/?category=water-flossers" class="no-underline <?= $catSlug === 'water-flossers' ? 'text-black border-b-2 border-black pb-1' : 'text-neutral-500 hover:text-black' ?>">Water Flossers</a>
+                <a href="/?category=new-arrivals" class="no-underline <?= $catSlug === 'new-arrivals' ? 'text-black border-b-2 border-black pb-1' : 'text-neutral-500 hover:text-black' ?>">New Arrivals</a>
+                <a href="/?category=best-sellers" class="no-underline <?= $catSlug === 'best-sellers' ? 'text-black border-b-2 border-black pb-1' : 'text-neutral-500 hover:text-black' ?>">Best Sellers</a>
+                <a href="/?category=sale" class="no-underline <?= $catSlug === 'sale' ? 'text-black border-b-2 border-black pb-1' : 'text-neutral-500 hover:text-black' ?>">Sale</a>
             </nav>
 
             <div class="flex-1 max-w-sm md:max-w-md hidden sm:block relative">
