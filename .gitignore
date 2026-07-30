@@ -1,0 +1,17 @@
+# Environment / Config
+.env
+config/db.local.php
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Logs
+*.log
