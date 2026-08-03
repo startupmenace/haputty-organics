@@ -44,8 +44,8 @@ if ($action === 'pay') {
     $result = mpesaStkPush($phone, $amount, $order['order_ref']);
 
     if ($result['success']) {
-        $pdo->prepare("UPDATE orders SET mpesa_checkout_id = ?, mpesa_merchant_id = ? WHERE id = ?")
-            ->execute([$result['checkout_request_id'], $result['merchant_request_id'], $orderId]);
+        $pdo->prepare("UPDATE orders SET mpesa_checkout_id = ? WHERE id = ?")
+            ->execute([$result['transaction_id'], $orderId]);
     }
 
     echo json_encode($result);

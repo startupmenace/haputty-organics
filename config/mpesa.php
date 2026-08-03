@@ -1,68 +1,36 @@
 <?php
-define('MPESA_CONSUMER_KEY', 'kbc9BKifIarvEKPnyPIGDrCbncGw5iz4cDKWu85tThpNrT1x');
-define('MPESA_CONSUMER_SECRET', 'b0IggS7DNiFkoFOPqyfzhGSCIXI8GGCAiViuguPOf6rtFlSpbDue4kLLSkSa8QAr');
-define('MPESA_SHORTCODE', '174379');
-define('MPESA_PASSKEY', 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919');
+define('PALPLUSS_API_KEY', 'pp_live_e95b8262478d946115b07adf2abe23a6fe3e9a89930a6c08');
+define('PALPLUSS_CHANNEL_ID', 'cac5f925-020a-48cc-b0c6-fc3a01ec7926');
+define('PALPLUSS_BASE_URL', 'https://api.palpluss.com/v1');
 
-// Sandbox endpoints
-define('MPESA_AUTH_URL', 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials');
-define('MPESA_STK_URL', 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest');
-define('MPESA_QUERY_URL', 'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query');
-
-// Callback URL (force HTTPS + detect domain)
-define('MPESA_CALLBACK_URL', 'https://' . ($_SERVER['HTTP_HOST'] ?? 'haputty.co.ke') . '/mpesa/callback.php');
+// Callback/webhook URL (force HTTPS + detect domain)
+define('PALPLUSS_CALLBACK_URL', 'https://' . ($_SERVER['HTTP_HOST'] ?? 'haputty.co.ke') . '/mpesa/callback.php');
 
 define('ADMIN_EMAIL', 'orders@happutysorganics.com');
 define('SITE_NAME', 'HAPPUTY ORGANICS');
 
-function mpesaAuth() {
-    $ch = curl_init(MPESA_AUTH_URL);
-    curl_setopt_array($ch, [
-        CURLOPT_HTTPHEADER => ['Authorization: Basic ' . base64_encode(MPESA_CONSUMER_KEY . ':' . MPESA_CONSUMER_SECRET)],
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_TIMEOUT => 30,
-    ]);
-    $res = curl_exec($ch);
-    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($http !== 200) return null;
-    $data = json_decode($res, true);
-    return $data['access_token'] ?? null;
+function palplussAuthHeader() {
+    return 'Authorization: Basic ' . base64_encode(PALPLUSS_API_KEY . ':');
 }
 
 function mpesaStkPush($phone, $amount, $orderRef, $accountRef = null) {
-    $token = mpesaAuth();
-    if (!$token) return ['success' => false, 'message' => 'Failed to authenticate with M-Pesa'];
-
-    $timestamp = date('YmdHis');
-    $password = base64_encode(MPESA_SHORTCODE . MPESA_PASSKEY . $timestamp);
-
-    // Format phone: remove +, 0 prefix, ensure 254 format
+    // Format phone: remove non-digits, ensure 254 format
     $phone = preg_replace('/[^0-9]/', '', $phone);
     if (substr($phone, 0, 1) === '0') $phone = '254' . substr($phone, 1);
     if (substr($phone, 0, 3) !== '254') $phone = '254' . $phone;
 
     $payload = [
-        'BusinessShortCode' => MPESA_SHORTCODE,
-        'Password' => $password,
-        'Timestamp' => $timestamp,
-        'TransactionType' => 'CustomerPayBillOnline',
-        'Amount' => round($amount),
-        'PartyA' => $phone,
-        'PartyB' => MPESA_SHORTCODE,
-        'PhoneNumber' => $phone,
-        'CallBackURL' => MPESA_CALLBACK_URL,
-        'AccountReference' => $accountRef ?: $orderRef,
-        'TransactionDesc' => 'HAPPUTY ORGANICS Order ' . $orderRef,
+        'amount' => round($amount),
+        'phone' => $phone,
+        'accountReference' => $accountRef ?: $orderRef,
+        'transactionDesc' => SITE_NAME . ' Order ' . $orderRef,
+        'channelId' => PALPLUSS_CHANNEL_ID,
+        'callbackUrl' => PALPLUSS_CALLBACK_URL,
     ];
 
-    $ch = curl_init(MPESA_STK_URL);
+    $ch = curl_init(PALPLUSS_BASE_URL . '/payments/stk');
     curl_setopt_array($ch, [
-        CURLOPT_HTTPHEADER => [
-            'Authorization: Bearer ' . $token,
-            'Content-Type: application/json',
-        ],
+        CURLOPT_HTTPHEADER => [palplussAuthHeader(), 'Content-Type: application/json'],
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => json_encode($payload),
         CURLOPT_RETURNTRANSFER => true,
@@ -74,64 +42,47 @@ function mpesaStkPush($phone, $amount, $orderRef, $accountRef = null) {
     curl_close($ch);
 
     $data = json_decode($res, true);
+    $data = $data['data'] ?? $data;
 
-    if ($http === 200 && ($data['ResponseCode'] ?? '1') === '0') {
+    if ($http === 200 && !empty($data['transactionId'])) {
         return [
             'success' => true,
-            'merchant_request_id' => $data['MerchantRequestID'] ?? '',
-            'checkout_request_id' => $data['CheckoutRequestID'] ?? '',
-            'message' => 'M-Pesa prompt sent to your phone',
+            'transaction_id' => $data['transactionId'],
+            'message' => 'Payment prompt sent to your phone',
         ];
     }
 
-    $msg = $data['errorMessage'] ?? ($data['ResponseDescription'] ?? 'M-Pesa request failed');
+    $msg = $data['message'] ?? ($data['error'] ?? ($data['result_desc'] ?? 'Payment request failed'));
     return ['success' => false, 'message' => $msg];
 }
 
-function mpesaQuery($checkoutRequestId) {
-    $token = mpesaAuth();
-    if (!$token) return ['success' => false, 'message' => 'Failed to authenticate'];
-
-    $timestamp = date('YmdHis');
-    $password = base64_encode(MPESA_SHORTCODE . MPESA_PASSKEY . $timestamp);
-
-    $payload = [
-        'BusinessShortCode' => MPESA_SHORTCODE,
-        'Password' => $password,
-        'Timestamp' => $timestamp,
-        'CheckoutRequestID' => $checkoutRequestId,
-    ];
-
-    $ch = curl_init(MPESA_QUERY_URL);
+function mpesaQuery($transactionId) {
+    $ch = curl_init(PALPLUSS_BASE_URL . '/transactions/' . urlencode($transactionId));
     curl_setopt_array($ch, [
-        CURLOPT_HTTPHEADER => [
-            'Authorization: Bearer ' . $token,
-            'Content-Type: application/json',
-        ],
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_HTTPHEADER => [palplussAuthHeader()],
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_TIMEOUT => 30,
     ]);
     $res = curl_exec($ch);
+    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
     $data = json_decode($res, true);
+    $t = $data['data'] ?? $data;
 
-    // ResultCode 0 means the transaction was successful
-    $resultCode = $data['ResultCode'] ?? 1;
-    $resultDesc = $data['ResultDesc'] ?? 'Unknown';
+    $status = strtoupper($t['status'] ?? 'unknown');
+    $resultDesc = $t['result_desc'] ?? ($t['message'] ?? 'Unknown');
 
-    if ($resultCode === 0) {
-        return ['success' => true, 'paid' => true, 'message' => $resultDesc, 'data' => $data];
-    } elseif ($resultCode === 1032) {
-        // Transaction cancelled by user
-        return ['success' => true, 'paid' => false, 'message' => 'Transaction cancelled by user', 'code' => 1032];
-    } elseif ($resultCode === 1037) {
-        // Timeout - still processing
-        return ['success' => true, 'paid' => false, 'message' => 'Transaction timeout', 'code' => 1037];
+    if ($status === 'SUCCESS') {
+        return ['success' => true, 'paid' => true, 'message' => $resultDesc, 'code' => 0, 'data' => $data];
+    } elseif ($status === 'PENDING') {
+        // Still processing
+        return ['success' => true, 'paid' => false, 'message' => 'Transaction pending', 'code' => 1037, 'data' => $data];
+    } elseif ($status === 'CANCELLED') {
+        // Cancelled by user
+        return ['success' => true, 'paid' => false, 'message' => 'Transaction cancelled by user', 'code' => 1032, 'data' => $data];
     } else {
-        return ['success' => true, 'paid' => false, 'message' => $resultDesc, 'code' => $resultCode];
+        return ['success' => true, 'paid' => false, 'message' => $resultDesc, 'code' => $http === 200 ? 1 : $http, 'data' => $data];
     }
 }
