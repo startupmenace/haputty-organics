@@ -39,20 +39,28 @@ function mpesaStkPush($phone, $amount, $orderRef, $accountRef = null) {
     ]);
     $res = curl_exec($ch);
     $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $errno = curl_errno($ch);
+    $cerr = curl_error($ch);
     curl_close($ch);
 
-    $data = json_decode($res, true);
-    $data = $data['data'] ?? $data;
+    @file_put_contents(__DIR__ . '/../mpesa/logs.txt',
+        '[' . date('Y-m-d H:i:s') . "] STK REQ phone=$phone amt=$amount http=$http errno=$errno err=$cerr\nRESP: $res\n", FILE_APPEND);
 
-    if ($http === 200 && !empty($data['transactionId'])) {
+    $data = json_decode($res, true);
+    $inner = $data['data'] ?? $data;
+
+    $httpOk = $http >= 200 && $http < 300;
+    $transactionId = $inner['transactionId'] ?? ($data['transactionId'] ?? '');
+
+    if ($httpOk && !empty($transactionId)) {
         return [
             'success' => true,
-            'transaction_id' => $data['transactionId'],
-            'message' => 'Payment prompt sent to your phone',
+            'transaction_id' => $transactionId,
+            'message' => ($data['message'] ?? ($inner['message'] ?? 'Payment prompt sent to your phone')),
         ];
     }
 
-    $msg = $data['message'] ?? ($data['error'] ?? ($data['result_desc'] ?? 'Payment request failed'));
+    $msg = $data['message'] ?? ($inner['message'] ?? ($data['error'] ?? ($inner['result_desc'] ?? 'Payment request failed')));
     return ['success' => false, 'message' => $msg];
 }
 
